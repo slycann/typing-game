@@ -16,7 +16,6 @@ import { KEY_BY_CODE, strokeForChar, type Finger } from '../input/keyLayout';
 import type { Profile } from '../save/types';
 import { currentProfile, store } from '../state';
 import { Button } from '../ui/Button';
-import { HandGuide } from '../ui/HandGuide';
 import { OnScreenKeyboard } from '../ui/OnScreenKeyboard';
 import { SpeechBubble } from '../ui/SpeechBubble';
 import { TargetStrip } from '../ui/TargetStrip';
@@ -33,7 +32,6 @@ const WORLD1 = KEY_STAGES.filter((s) => s.world === 1);
 export class WorkshopScene extends Phaser.Scene {
   private profile!: Profile;
   private kb!: OnScreenKeyboard;
-  private hands!: HandGuide;
   private bubble!: SpeechBubble;
   private stageLabel!: Phaser.GameObjects.Text;
   private coinText!: Phaser.GameObjects.Text;
@@ -52,7 +50,7 @@ export class WorkshopScene extends Phaser.Scene {
     super('Workshop');
   }
 
-  create(data: { firstVisit?: boolean }): void {
+  create(): void {
     enterScene(this);
     const p = currentProfile();
     if (!p) {
@@ -79,18 +77,17 @@ export class WorkshopScene extends Phaser.Scene {
 
     const kbW = 1250;
     this.kb = new OnScreenKeyboard(this, (GAME_W - kbW) / 2, GAME_H - OnScreenKeyboard.heightFor(kbW) - 36, { width: kbW }).attach(keyboard);
-    this.hands = new HandGuide(this, this.kb);
     debug.keyboard = this.kb;
 
     const name = this.profile.name;
-    if (data?.firstVisit) {
+    if (!this.profile.seen.includes('workshop')) {
+      void store.updateProfile(this.profile.id, (p) => p.seen.push('workshop'));
       this.bubble.say(`Hello ${name}! I'm Grandpa Qwerty.\nRest your fingers on the home row.\nFeel the bumps on F and J?\nPress space with your thumb to start!`);
     } else {
       this.bubble.say(`Welcome back, ${name}!\nPress space to start!`);
     }
     this.stageLabel.setText('Key Workshop');
     this.kb.setTargets(['Space']);
-    this.hands.showFor(' ');
     this.updateDebug();
 
     onKeys(this, (e) => this.handleKey(e));
@@ -98,7 +95,7 @@ export class WorkshopScene extends Phaser.Scene {
 
   private handleKey(e: KeyInputEvent): void {
     if (e.type !== 'down' || e.repeat) return;
-    if (e.code === 'Escape') return goTo(this, 'ProfileSelect');
+    if (e.code === 'Escape') return goTo(this, 'WorldMap', { focus: 0 });
     if (this.mode !== 'drill') {
       if (e.code === 'Space' || e.code === 'Enter') return this.startDrill();
       if (e.char?.trim()) {
@@ -183,7 +180,6 @@ export class WorkshopScene extends Phaser.Scene {
     const targets = stroke ? [stroke.code, ...(stroke.shiftCode ? [stroke.shiftCode] : [])] : [];
     if (this.capsWarned && keyboard.isDown('CapsLock')) targets.push('CapsLock');
     this.kb.setTargets(targets);
-    this.hands.showFor(ch);
     this.updateDebug();
   }
 
@@ -208,7 +204,6 @@ export class WorkshopScene extends Phaser.Scene {
     const s = this.session!;
     this.mode = 'results';
     this.kb.setTargets([]);
-    this.hands.rest();
     const accuracy = s.accuracy();
     const stars = Math.max(1, starsForAccuracy(accuracy, this.profile.ageBand));
     const coins = stars * 2 + 1;
@@ -327,7 +322,7 @@ export class WorkshopScene extends Phaser.Scene {
     this.coinIcon.fillStyle(0xffffff, 0.6);
     this.coinIcon.fillCircle(-8, -8, 7);
     this.coinText = this.add.text(434, 84, String(this.profile.coins), { fontFamily: FONT_BODY, fontSize: '42px', color: INK_CSS, fontStyle: 'bold' }).setOrigin(0, 0.5);
-    new Button(this, 1800, 84, 'Home', () => goTo(this, 'ProfileSelect'), { width: 200, height: 96, fontSize: 40, color: PALETTE.teal });
+    new Button(this, 1800, 84, 'Map', () => goTo(this, 'WorldMap', { focus: 0 }), { width: 200, height: 96, fontSize: 40, color: PALETTE.teal });
   }
 
   private updateDebug(extra: Record<string, unknown> = {}): void {
@@ -337,7 +332,6 @@ export class WorkshopScene extends Phaser.Scene {
       target: this.session?.target ?? null,
       index: this.session?.index ?? 0,
       expected: this.session?.expected ?? null,
-      hands: this.hands?.activeFingers() ?? [],
       coins: this.profile.coins,
       ...extra,
     };

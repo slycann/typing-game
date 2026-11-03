@@ -7,6 +7,7 @@ export const debug = {
   keyboard: null as OnScreenKeyboard | null,
   info: {} as Record<string, unknown>,
   fps: () => 0,
+  players: () => [] as unknown[],
   marks: [] as [string, number][],
   mark(label: string): void {
     this.marks.push([label, Math.round(performance.now())]);
@@ -28,5 +29,6 @@ if (typeof window !== 'undefined') {
     info: () => debug.info,
     fps: () => debug.fps(),
     marks: () => debug.marks,
+    players: () => debug.players(),
   };
 }

@@ -71,3 +71,41 @@ describe('cleanName', () => {
     expect(cleanName('!!!')).toBe('Player');
   });
 });
+
+describe('grown-up player management', () => {
+  it('resets progress but keeps the player', async () => {
+    const storage = new MemoryStorage();
+    const s = new SaveStore(storage);
+    await s.load();
+    const p = await s.createProfile(kid);
+    await s.updateProfile(p.id, (pr) => {
+      pr.coins = 40;
+      pr.stars['w1-1'] = 3;
+      pr.keyStats.f = { hits: 9, misses: 1, totalMs: 5000 };
+      pr.seen.push('intro');
+    });
+    s.data.leaderboards.speed = [{ initials: 'VIV', score: 10, profileId: p.id, at: 1 }, { initials: 'ZED', score: 5, at: 2 }];
+    await s.resetProgress(p.id);
+
+    const t = new SaveStore(storage);
+    await t.load();
+    expect(t.getProfile(p.id)).toMatchObject({ name: 'Vivian', animal: 'bunny', coins: 0, stars: {}, keyStats: {}, seen: [] });
+    expect(t.data.leaderboards.speed.map((e) => e.initials)).toEqual(['ZED']);
+  });
+
+  it('deletes a player and their scores for good', async () => {
+    const storage = new MemoryStorage();
+    const s = new SaveStore(storage);
+    await s.load();
+    const a = await s.createProfile(kid);
+    const b = await s.createProfile({ ...kid, name: 'violet' });
+    s.data.leaderboards.speed = [{ initials: 'VIV', score: 10, profileId: a.id, at: 1 }];
+    await s.deleteProfile(a.id);
+
+    const t = new SaveStore(storage);
+    await t.load();
+    expect(t.profiles.map((p) => p.name)).toEqual(['Violet']);
+    expect(t.data.leaderboards.speed).toEqual([]);
+    expect(t.getProfile(b.id)).toBeDefined();
+  });
+});

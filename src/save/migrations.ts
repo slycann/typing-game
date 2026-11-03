@@ -55,5 +55,7 @@ function repairProfile(p: Partial<Profile>): Profile {
     stickers: p.stickers ?? [],
     drillsDone: p.drillsDone ?? 0,
     playMs: p.playMs ?? 0,
+    bestStreak: p.bestStreak ?? 0,
+    seen: p.seen ?? [],
   };
 }

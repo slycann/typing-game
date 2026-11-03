@@ -119,6 +119,8 @@ export class SaveStore {
       stickers: [],
       drillsDone: 0,
       playMs: 0,
+      bestStreak: 0,
+      seen: [],
     };
     this.data.profiles.push(profile);
     this.data.lastProfileId = profile.id;
@@ -134,9 +136,24 @@ export class SaveStore {
     return p;
   }
 
+  /** Remove a player and everything saved about them, including their leaderboard scores. */
   async deleteProfile(id: string): Promise<void> {
     this.data.profiles = this.data.profiles.filter((p) => p.id !== id);
+    for (const board of Object.values(this.data.leaderboards)) {
+      for (let i = board.length - 1; i >= 0; i--) if (board[i].profileId === id) board.splice(i, 1);
+    }
     if (this.data.lastProfileId === id) this.data.lastProfileId = null;
+    await this.commit();
+  }
+
+  /** Start a player over from scratch but keep their name, critter and age. */
+  async resetProgress(id: string): Promise<void> {
+    const p = this.getProfile(id);
+    if (!p) throw new Error(`No player ${id}`);
+    Object.assign(p, { coins: 0, xp: 0, stars: {}, keyStats: {}, stickers: [], drillsDone: 0, playMs: 0, bestStreak: 0, seen: [] });
+    for (const board of Object.values(this.data.leaderboards)) {
+      for (let i = board.length - 1; i >= 0; i--) if (board[i].profileId === id) board.splice(i, 1);
+    }
     await this.commit();
   }
 

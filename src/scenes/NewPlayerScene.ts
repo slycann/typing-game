@@ -286,6 +286,6 @@ export class NewPlayerScene extends Phaser.Scene {
     confetti(this, GAME_W / 2, 400, 90);
     const profile = await store.createProfile({ name: this.name, animal: this.animal, outfit: this.outfit, ageBand });
     session.profileId = profile.id;
-    this.time.delayedCall(900, () => goTo(this, 'Workshop', { firstVisit: true }));
+    this.time.delayedCall(900, () => goTo(this, 'Story'));
   }
 }

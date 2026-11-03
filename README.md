@@ -21,7 +21,7 @@ npm run build      # typecheck + production build into dist/
 ## Where things live
 
 - `src/input/` – keyboard events (`KeyboardInput.ts`) and the Mac key layout with finger assignments (`keyLayout.ts`)
-- `src/ui/` – on-screen keyboard, Finger Friend hands, target tiles, buttons, speech bubbles
+- `src/ui/` – on-screen keyboard, target tiles, buttons, speech bubbles
 - `src/engine/` – typing session scoring (accuracy, WPM, stars) and the seeded RNG
 - `src/curriculum/` – key introduction order, word bank, drill generator
 - `src/save/` – player profiles and progress, with versioned migrations

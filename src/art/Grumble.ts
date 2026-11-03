@@ -2,13 +2,16 @@ import Phaser from 'phaser';
 import { bake } from './bake';
 import { INK } from './palette';
 
-export type GrumbleMood = 'grumpy' | 'sneezy' | 'happy';
+export type GrumbleMood = 'grumpy' | 'okay' | 'sneezy' | 'happy';
 
 /** Grumble the Raincloud: lonely, a bit grumpy, and secretly lovely. */
 export class Grumble extends Phaser.GameObjects.Container {
   private cloudImg: Phaser.GameObjects.Image;
   private faceG: Phaser.GameObjects.Graphics;
   mood: GrumbleMood = 'grumpy';
+  /** The mood to return to after sneezing. */
+  restMood: GrumbleMood = 'grumpy';
+  private baseScale = 1;
 
   constructor(scene: Phaser.Scene, x: number, y: number, scale = 1) {
     super(scene, x, y);
@@ -18,6 +21,7 @@ export class Grumble extends Phaser.GameObjects.Container {
     this.drawBody();
     this.setMood('grumpy');
     this.setScale(scale);
+    this.baseScale = scale;
     scene.add.existing(this);
     scene.tweens.add({ targets: this, y: y - 14, duration: 1800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
   }
@@ -52,6 +56,10 @@ export class Grumble extends Phaser.GameObjects.Container {
       g.beginPath();
       g.arc(0, 46, 22, Phaser.Math.DegToRad(200), Phaser.Math.DegToRad(340));
       g.strokePath();
+    } else if (mood === 'okay') {
+      g.lineBetween(-50, -30, -20, -28);
+      g.lineBetween(50, -30, 20, -28);
+      g.lineBetween(-16, 34, 16, 34);
     } else {
       g.beginPath();
       g.arc(0, 18, 26, Phaser.Math.DegToRad(20), Phaser.Math.DegToRad(160));
@@ -59,18 +67,35 @@ export class Grumble extends Phaser.GameObjects.Container {
     }
   }
 
+  /** A little "hee!" wiggle when something nice happens. */
+  wiggle(): void {
+    if (this.mood === 'sneezy') return;
+    const s = this.baseScale;
+    this.scene.tweens.add({ targets: this, scaleX: s * 1.08, scaleY: s * 0.94, angle: { from: -4, to: 4 }, duration: 120, yoyo: true, onComplete: () => this.setAngle(0).setScale(s) });
+  }
+
   /** Wind up and AH-CHOO! Calls back at the moment of the sneeze. */
   sneeze(onAchoo: () => void): void {
+    if (this.mood === 'sneezy') return void onAchoo();
     this.setMood('sneezy');
+    this.setScale(this.baseScale).setAngle(0);
+    let achooed = false; // onYoyo fires once per tweened property
     this.scene.tweens.add({
       targets: this,
-      scaleX: this.scaleX * 1.12,
-      scaleY: this.scaleY * 0.9,
+      scaleX: this.baseScale * 1.12,
+      scaleY: this.baseScale * 0.9,
       duration: 420,
       yoyo: true,
       ease: 'Sine.easeInOut',
-      onYoyo: () => onAchoo(),
-      onComplete: () => this.setMood('grumpy'),
+      onYoyo: () => {
+        if (achooed) return;
+        achooed = true;
+        onAchoo();
+      },
+      onComplete: () => {
+        this.setScale(this.baseScale);
+        this.setMood(this.restMood);
+      },
     });
   }
 

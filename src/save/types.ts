@@ -25,6 +25,9 @@ export interface Profile {
   stickers: string[];
   drillsDone: number;
   playMs: number;
+  bestStreak: number;
+  /** Story scenes and one-time hints already shown. */
+  seen: string[];
 }
 
 export interface LeaderboardEntry {

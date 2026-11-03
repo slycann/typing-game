@@ -7,6 +7,7 @@ import { FONT_BODY, FONT_TITLE, GAME_W } from '../config';
 import { debug } from '../debug';
 import type { Profile } from '../save/types';
 import { session, store } from '../state';
+import { Button } from '../ui/Button';
 import { SpeechBubble } from '../ui/SpeechBubble';
 import { enterScene, goTo, onKeys } from './common';
 
@@ -44,6 +45,9 @@ export class ProfileSelectScene extends Phaser.Scene {
     this.cards = entries.map((p, i) => this.makeCard(p, i, entries.length));
     const last = this.cards.findIndex((c) => c.profile?.id === store.data.lastProfileId);
     this.setFocus(Math.max(0, last));
+
+    // Reset or delete players (behind a parental gate). Click only, so it stays out of kids' way.
+    new Button(this, 190, 1000, 'Grown-ups', () => goTo(this, 'Grownups'), { width: 300, height: 90, fontSize: 38, color: PALETTE.purple });
 
     const qwerty = characterImage(this, 'qwerty', 1720, 1060, 0.8);
     this.tweens.add({ targets: qwerty, angle: { from: -1.5, to: 1.5 }, duration: 1600, yoyo: true, repeat: -1 });
@@ -140,6 +144,6 @@ export class ProfileSelectScene extends Phaser.Scene {
     if (!card.profile) return goTo(this, 'NewPlayer');
     session.profileId = card.profile.id;
     void store.selectProfile(card.profile.id);
-    goTo(this, 'Workshop');
+    goTo(this, card.profile.seen.includes('intro') ? 'WorldMap' : 'Story');
   }
 }
