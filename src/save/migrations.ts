@@ -57,5 +57,13 @@ function repairProfile(p: Partial<Profile>): Profile {
     playMs: p.playMs ?? 0,
     bestStreak: p.bestStreak ?? 0,
     seen: p.seen ?? [],
+    owned: p.owned ?? [],
+    wearing: { hat: null, glasses: null, pet: null, ...(p.wearing ?? {}) },
+    treehouse: p.treehouse ?? {},
+    daily: p.daily ?? { day: '', done: [] },
+    daysPlayed: p.daysPlayed ?? [],
+    badges: p.badges ?? [],
+    bestSpeed: p.bestSpeed ?? {},
+    gardenRuns: p.gardenRuns ?? 0,
   };
 }

@@ -21,6 +21,7 @@ interface KeyView {
   capImg: Phaser.GameObjects.Image;
   glow: Phaser.GameObjects.Image;
   labels: Phaser.GameObjects.Text[];
+  badge: Phaser.GameObjects.Image | null;
   w: number;
   h: number;
   down: boolean;
@@ -134,6 +135,23 @@ export class OnScreenKeyboard extends Phaser.GameObjects.Container {
     }
   }
 
+  /** Show or hide one key's letter (hidden = the child has learned where it is). */
+  setLabelVisible(code: string, on: boolean): void {
+    const v = this.views.get(code);
+    if (v && v.def.kind === 'char') for (const t of v.labels) t.setVisible(on);
+  }
+
+  /** A small picture in the corner of a key (the mastery flower), or null to clear it. */
+  setBadge(code: string, texture: string | null): void {
+    const v = this.views.get(code);
+    if (!v) return;
+    v.badge?.destroy();
+    v.badge = null;
+    if (!texture) return;
+    v.badge = this.scene.add.image(v.w / 2 - this.unit * 0.18, -v.h / 2 + this.unit * 0.2, texture).setDisplaySize(this.unit * 0.42, this.unit * 0.42);
+    v.cap.add(v.badge);
+  }
+
   /** Centre of a key in this container's coordinates. */
   keyCenter(code: string): { x: number; y: number; w: number; h: number } | null {
     const v = this.views.get(code);
@@ -244,7 +262,7 @@ export class OnScreenKeyboard extends Phaser.GameObjects.Container {
     }
     root.add([base, cap, glow]);
     this.add(root);
-    const view: KeyView = { def, root, base, cap, capImg, glow, labels, w, h, down: false };
+    const view: KeyView = { def, root, base, cap, capImg, glow, labels, badge: null, w, h, down: false };
     this.views.set(def.code, view);
     this.paint(view);
   }

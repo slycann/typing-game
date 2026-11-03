@@ -8,6 +8,7 @@ export const debug = {
   info: {} as Record<string, unknown>,
   fps: () => 0,
   players: () => [] as unknown[],
+  profile: () => null as unknown,
   marks: [] as [string, number][],
   mark(label: string): void {
     this.marks.push([label, Math.round(performance.now())]);
@@ -30,5 +31,6 @@ if (typeof window !== 'undefined') {
     fps: () => debug.fps(),
     marks: () => debug.marks,
     players: () => debug.players(),
+    profile: () => debug.profile(),
   };
 }

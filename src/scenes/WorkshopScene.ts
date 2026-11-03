@@ -13,6 +13,7 @@ import { Rng } from '../engine/Rng';
 import { starsForAccuracy, TypingSession } from '../engine/TypingSession';
 import { keyboard, type KeyInputEvent } from '../input/KeyboardInput';
 import { KEY_BY_CODE, strokeForChar, type Finger } from '../input/keyLayout';
+import { hintsFor, unlockedKeys } from '../engine/Mastery';
 import type { Profile } from '../save/types';
 import { currentProfile, store } from '../state';
 import { Button } from '../ui/Button';
@@ -78,6 +79,7 @@ export class WorkshopScene extends Phaser.Scene {
     const kbW = 1250;
     this.kb = new OnScreenKeyboard(this, (GAME_W - kbW) / 2, GAME_H - OnScreenKeyboard.heightFor(kbW) - 36, { width: kbW }).attach(keyboard);
     debug.keyboard = this.kb;
+    for (const ch of unlockedKeys(this.profile)) this.kb.setLabelVisible(strokeForChar(ch)!.code, hintsFor(this.profile, ch).label);
 
     const name = this.profile.name;
     if (!this.profile.seen.includes('workshop')) {
@@ -177,7 +179,8 @@ export class WorkshopScene extends Phaser.Scene {
   private showNext(): void {
     const ch = this.session?.expected ?? null;
     const stroke = ch === null ? null : strokeForChar(ch);
-    const targets = stroke ? [stroke.code, ...(stroke.shiftCode ? [stroke.shiftCode] : [])] : [];
+    const glow = ch !== null && (this.missesInARow > 0 || hintsFor(this.profile, ch).glow);
+    const targets = stroke && glow ? [stroke.code, ...(stroke.shiftCode ? [stroke.shiftCode] : [])] : [];
     if (this.capsWarned && keyboard.isDown('CapsLock')) targets.push('CapsLock');
     this.kb.setTargets(targets);
     this.updateDebug();

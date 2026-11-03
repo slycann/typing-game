@@ -57,13 +57,18 @@ export function applyResult(profile: Profile, r: LevelResult): ApplyOutcome {
   profile.xp += r.correct;
   profile.playMs += r.elapsedMs;
   profile.bestStreak = Math.max(profile.bestStreak, r.bestStreak);
-  for (const [ch, st] of r.perChar) {
+  mergeKeyStats(profile, r.perChar);
+  const newStickers = r.rescued.filter((s) => !profile.stickers.includes(s));
+  profile.stickers.push(...newStickers);
+  return { newBest: r.stars > before, newStickers, firstClear: before === 0 && r.stars > 0 };
+}
+
+/** Add one run's per-key results into the player's lifetime key stats. Mutates `profile`. */
+export function mergeKeyStats(profile: Profile, perChar: ReadonlyMap<string, CharStat>): void {
+  for (const [ch, st] of perChar) {
     const k = (profile.keyStats[ch] ??= { hits: 0, misses: 0, totalMs: 0 });
     k.hits += st.hits;
     k.misses += st.misses;
     k.totalMs += st.totalMs;
   }
-  const newStickers = r.rescued.filter((s) => !profile.stickers.includes(s));
-  profile.stickers.push(...newStickers);
-  return { newBest: r.stars > before, newStickers, firstClear: before === 0 && r.stars > 0 };
 }

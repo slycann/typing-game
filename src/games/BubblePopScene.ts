@@ -6,6 +6,7 @@ import { characterImage } from '../art/textures';
 import { PALETTE } from '../art/palette';
 import { ageIndex } from '../curriculum/worlds';
 import type { KeyInputEvent } from '../input/KeyboardInput';
+import type { PowerUpId } from '../engine/PowerUps';
 import { WordTargeter, type Target } from '../engine/WordTargeter';
 import { WordLabel } from '../ui/WordLabel';
 import { GameBase, PLAY_BOTTOM } from './GameBase';
@@ -14,6 +15,8 @@ interface Bubble extends Target {
   c: Phaser.GameObjects.Container;
   label: WordLabel;
   gone: boolean;
+  /** A golden power-up bubble. */
+  gift?: PowerUpId;
 }
 
 const WAND = { x: 300, y: 420 };
@@ -80,15 +83,28 @@ export class BubblePopScene extends GameBase {
 
   private spawn(): void {
     if (this.spawned >= this.items.length) return;
-    const live = this.bubbles.filter((b) => !b.gone);
+    const live = this.bubbles.filter((b) => !b.gone && !b.gift);
     if (live.length >= MAX_ON_SCREEN[this.age]) return;
-    const text = this.items[this.spawned++];
+    this.blow(this.items[this.spawned++]);
+  }
+
+  protected spawnGift(word: string, id: PowerUpId): boolean {
+    this.blow(word, id);
+    return true;
+  }
+
+  protected setBig(on: boolean): void {
+    super.setBig(on);
+    for (const b of this.bubbles) if (!b.gone) this.tweens.add({ targets: b.label, scale: on ? 1.45 : 1, duration: 250 });
+  }
+
+  private blow(text: string, gift?: PowerUpId): void {
     const words = text.length > 1;
     const size = words ? Math.max(170, 60 + text.length * 40) : 150;
-    const key = bake(this, `bubble-${size}`, size + 8, size + 8, (g) => {
+    const key = bake(this, `bubble-${size}-${gift ? 'gold' : 'plain'}`, size + 8, size + 8, (g) => {
       const r = size / 2;
       const cx = r + 4;
-      g.fillStyle(0xbfe9ff, 0.45);
+      g.fillStyle(gift ? 0xffd23f : 0xbfe9ff, gift ? 0.75 : 0.45);
       g.fillCircle(cx, cx, r);
       g.lineStyle(6, 0xffffff, 0.95);
       g.strokeCircle(cx, cx, r);
@@ -99,9 +115,9 @@ export class BubblePopScene extends GameBase {
       g.fillStyle(0xffc6ec, 0.5);
       g.fillEllipse(cx + r * 0.4, cx + r * 0.45, r * 0.3, r * 0.14);
     });
-    const label = new WordLabel(this, 0, 0, text, words ? 50 : 76);
+    const label = new WordLabel(this, 0, 0, text, words ? 50 : 76).setScale(this.bigLetters ? 1.45 : 1);
     const c = this.add.container(WAND.x, WAND.y, [this.add.image(0, 0, key), label]).setScale(0.2);
-    const b: Bubble = { text, typed: 0, c, label, gone: false };
+    const b: Bubble = { text, typed: 0, c, label, gone: false, gift };
     this.bubbles.push(b);
     sfx.pop();
     this.tweens.add({ targets: this.juni, scaleY: this.juni.scaleY * 0.94, duration: 120, yoyo: true });
@@ -141,7 +157,7 @@ export class BubblePopScene extends GameBase {
       this.updateDebug();
     }
     // Don't keep kids waiting when the sky is empty.
-    if (this.spawned < this.items.length && !this.bubbles.some((b) => !b.gone)) this.spawn();
+    if (this.spawned < this.items.length && !this.bubbles.some((b) => !b.gone && !b.gift)) this.spawn();
   }
 
   protected onChar(e: KeyInputEvent): void {
@@ -153,12 +169,15 @@ export class BubblePopScene extends GameBase {
     }
     this.hit(res.expected, e);
     res.target.label.setTyped(res.target.typed);
-    if (res.result === 'complete') this.pop(res.target);
+    if (res.result === 'complete' && res.target.gift) {
+      this.pop(res.target, false);
+      this.activate(res.target.gift);
+    } else if (res.result === 'complete') this.pop(res.target);
     else this.tweens.add({ targets: res.target.c, scale: 1.08, duration: 80, yoyo: true });
     this.lastGuide = undefined;
   }
 
-  private pop(b: Bubble): void {
+  private pop(b: Bubble, counts = true): void {
     b.gone = true;
     this.tweens.killTweensOf(b.c);
     sfx.pop();
@@ -169,16 +188,17 @@ export class BubblePopScene extends GameBase {
       this.tweens.add({ targets: d, x: x + Math.cos(a) * 110, y: y + Math.sin(a) * 110, alpha: 0, scale: 0.3, duration: 380, ease: 'Quad.easeOut', onComplete: () => d.destroy() });
     }
     this.tweens.add({ targets: b.c, scale: 1.4, alpha: 0, duration: 160, onComplete: () => b.c.destroy() });
-    this.resolve();
+    if (counts) this.resolve();
   }
 
   private floatAway(b: Bubble): void {
     if (b.gone) return;
     b.gone = true;
     this.targeter.drop(b);
-    this.escaped(b.text.slice(b.typed));
     b.c.destroy();
     this.lastGuide = undefined;
+    if (b.gift) return this.giftGone();
+    this.escaped(b.text.slice(b.typed));
     this.resolve();
   }
 
@@ -187,7 +207,7 @@ export class BubblePopScene extends GameBase {
     this.setProgress(this.resolved, this.items.length);
     if (this.resolved >= this.items.length) {
       this.spawnTimer?.remove();
-      this.updateDebug({ made: this.bubbles.length, items: this.items.length });
+      this.updateDebug({ made: this.bubbles.filter((b) => !b.gift).length, items: this.items.length });
       void this.finish(900);
     }
   }

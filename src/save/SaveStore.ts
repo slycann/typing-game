@@ -121,6 +121,7 @@ export class SaveStore {
       playMs: 0,
       bestStreak: 0,
       seen: [],
+      ...freshExtras(),
     };
     this.data.profiles.push(profile);
     this.data.lastProfileId = profile.id;
@@ -150,7 +151,7 @@ export class SaveStore {
   async resetProgress(id: string): Promise<void> {
     const p = this.getProfile(id);
     if (!p) throw new Error(`No player ${id}`);
-    Object.assign(p, { coins: 0, xp: 0, stars: {}, keyStats: {}, stickers: [], drillsDone: 0, playMs: 0, bestStreak: 0, seen: [] });
+    Object.assign(p, { coins: 0, xp: 0, stars: {}, keyStats: {}, stickers: [], drillsDone: 0, playMs: 0, bestStreak: 0, seen: [], ...freshExtras() });
     for (const board of Object.values(this.data.leaderboards)) {
       for (let i = board.length - 1; i >= 0; i--) if (board[i].profileId === id) board.splice(i, 1);
     }
@@ -175,6 +176,19 @@ export class SaveStore {
     this.data = migrate(parsed);
     await this.commit();
   }
+}
+
+function freshExtras() {
+  return {
+    owned: [] as string[],
+    wearing: { hat: null, glasses: null, pet: null },
+    treehouse: {},
+    daily: { day: '', done: [] as string[] },
+    daysPlayed: [] as string[],
+    badges: [] as string[],
+    bestSpeed: {},
+    gardenRuns: 0,
+  };
 }
 
 export function cleanName(name: string): string {

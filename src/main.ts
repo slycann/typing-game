@@ -10,6 +10,13 @@ import { GrumbleBossScene } from './games/GrumbleBossScene';
 import { KeyHopScene } from './games/KeyHopScene';
 import { BootScene } from './scenes/BootScene';
 import { GrownupsScene } from './scenes/GrownupsScene';
+import { InitialsScene } from './scenes/InitialsScene';
+import { LeaderboardScene } from './scenes/LeaderboardScene';
+import { PracticeGardenScene } from './scenes/PracticeGardenScene';
+import { ShopScene } from './scenes/ShopScene';
+import { SpeedRaceScene } from './scenes/SpeedRaceScene';
+import { StickerBookScene } from './scenes/StickerBookScene';
+import { TreehouseScene } from './scenes/TreehouseScene';
 import { NewPlayerScene } from './scenes/NewPlayerScene';
 import { PauseScene } from './scenes/PauseScene';
 import { ProfileSelectScene } from './scenes/ProfileSelectScene';
@@ -46,7 +53,15 @@ const game = new Phaser.Game({
     ResultsScene,
     PauseScene,
     GrownupsScene,
+    PracticeGardenScene,
+    SpeedRaceScene,
+    InitialsScene,
+    LeaderboardScene,
+    ShopScene,
+    TreehouseScene,
+    StickerBookScene,
   ],
 });
 debug.fps = () => Math.round(game.loop.actualFps);
+debug.profile = () => store.getProfile(store.data.lastProfileId) ?? null;
 debug.players = () => store.profiles.map((p) => ({ name: p.name, coins: p.coins, stars: Object.keys(p.stars).length, stickers: p.stickers }));

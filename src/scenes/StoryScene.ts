@@ -6,7 +6,8 @@ import { Grumble } from '../art/Grumble';
 import { Letterling } from '../art/Letterling';
 import { INK, INK_CSS, PALETTE } from '../art/palette';
 import { cloud, hills, sky, sun, tree } from '../art/scenery';
-import { characterImage, critterImage } from '../art/textures';
+import { Avatar } from '../art/Avatar';
+import { characterImage } from '../art/textures';
 import { FONT_BODY, GAME_W } from '../config';
 import { debug } from '../debug';
 import { currentProfile, store } from '../state';
@@ -98,7 +99,7 @@ export class StoryScene extends Phaser.Scene {
         build: () => {
           meadow();
           keep(characterImage(this, 'qwerty', 700, 780, 1.2));
-          const me = keep(critterImage(this, 1220, 790, profile.animal, profile.outfit, 1.5));
+          const me = keep(new Avatar(this, 1220, 790, profile, 1.5));
           this.tweens.add({ targets: me, y: 740, duration: 300, yoyo: true, repeat: -1, repeatDelay: 400, ease: 'Quad.easeOut' });
           this.sparkleRing(1220, 560);
         },

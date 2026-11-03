@@ -2,11 +2,12 @@ import Phaser from 'phaser';
 import { sfx } from '../audio/Sfx';
 import { INK, INK_CSS, OUTFIT_COLORS, PALETTE, darken, lighten } from '../art/palette';
 import { bunting, workshop } from '../art/scenery';
-import { characterImage, critterImage } from '../art/textures';
+import { Avatar } from '../art/Avatar';
+import { characterImage } from '../art/textures';
 import { FONT_BODY, FONT_TITLE, GAME_W } from '../config';
 import { debug } from '../debug';
 import type { Profile } from '../save/types';
-import { session, store } from '../state';
+import { startSitting, store } from '../state';
 import { Button } from '../ui/Button';
 import { SpeechBubble } from '../ui/SpeechBubble';
 import { enterScene, goTo, onKeys } from './common';
@@ -94,7 +95,7 @@ export class ProfileSelectScene extends Phaser.Scene {
     const parts: Phaser.GameObjects.GameObject[] = [ring, g];
 
     if (profile) {
-      parts.push(critterImage(this, 0, 80, profile.animal, profile.outfit, 0.82));
+      parts.push(new Avatar(this, 0, 80, profile, 0.82, false));
       parts.push(this.add.text(0, 132, profile.name, { fontFamily: FONT_TITLE, fontSize: '52px', color: '#ffffff', stroke: INK_CSS, strokeThickness: 9 }).setOrigin(0.5));
       const stars = Object.values(profile.stars).reduce((a, b) => a + b, 0);
       parts.push(this.add.text(0, -170, `★ ${stars}   ● ${profile.coins}`, { fontFamily: FONT_BODY, fontSize: '30px', color: INK_CSS, fontStyle: 'bold' }).setOrigin(0.5));
@@ -142,7 +143,7 @@ export class ProfileSelectScene extends Phaser.Scene {
     if (!card) return;
     sfx.select();
     if (!card.profile) return goTo(this, 'NewPlayer');
-    session.profileId = card.profile.id;
+    startSitting(card.profile.id);
     void store.selectProfile(card.profile.id);
     goTo(this, card.profile.seen.includes('intro') ? 'WorldMap' : 'Story');
   }

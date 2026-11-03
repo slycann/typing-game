@@ -9,7 +9,7 @@ import { FONT_BODY, FONT_TITLE, GAME_H, GAME_W } from '../config';
 import { debug } from '../debug';
 import { keyboard, type KeyInputEvent } from '../input/KeyboardInput';
 import type { AgeBand, AnimalKind } from '../save/types';
-import { session, store } from '../state';
+import { startSitting, store } from '../state';
 import { Button } from '../ui/Button';
 import { OnScreenKeyboard } from '../ui/OnScreenKeyboard';
 import { confetti, enterScene, goTo, onKeys } from './common';
@@ -285,7 +285,7 @@ export class NewPlayerScene extends Phaser.Scene {
     sfx.cheer();
     confetti(this, GAME_W / 2, 400, 90);
     const profile = await store.createProfile({ name: this.name, animal: this.animal, outfit: this.outfit, ageBand });
-    session.profileId = profile.id;
+    startSitting(profile.id);
     this.time.delayedCall(900, () => goTo(this, 'Story'));
   }
 }

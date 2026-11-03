@@ -7,6 +7,7 @@ import { INK, PALETTE } from '../art/palette';
 import { flower, hills, sky } from '../art/scenery';
 import { GAME_W } from '../config';
 import { ageIndex } from '../curriculum/worlds';
+import type { PowerUpId } from '../engine/PowerUps';
 import { WordTargeter, type Target } from '../engine/WordTargeter';
 import type { KeyInputEvent } from '../input/KeyboardInput';
 import { confetti } from '../scenes/common';
@@ -17,6 +18,8 @@ interface Drop extends Target {
   c: Phaser.GameObjects.Container;
   label: WordLabel;
   gone: boolean;
+  /** A golden power-up raindrop. */
+  gift?: PowerUpId;
 }
 
 const GROUND = PLAY_BOTTOM - 10;
@@ -76,17 +79,27 @@ export class GrumbleBossScene extends GameBase {
 
   private sneezeDrop(): void {
     if (this.spawned >= this.items.length) return;
-    if (this.drops.filter((d) => !d.gone).length >= MAX_DROPS[this.age]) return;
+    if (this.drops.filter((d) => !d.gone && !d.gift).length >= MAX_DROPS[this.age]) return;
     const text = this.items[this.spawned++];
     this.grumble.sneeze(() => this.makeDrop(text));
   }
 
-  private makeDrop(text: string): void {
-    const key = bake(this, 'rain-drop', 110, 140, (g) => {
-      g.fillStyle(0x2f7fd6, 1);
+  protected spawnGift(word: string, id: PowerUpId): boolean {
+    this.makeDrop(word, id);
+    return true;
+  }
+
+  protected setBig(on: boolean): void {
+    super.setBig(on);
+    for (const d of this.drops) if (!d.gone) this.tweens.add({ targets: d.label, scale: on ? 1.4 : 1, duration: 250 });
+  }
+
+  private makeDrop(text: string, gift?: PowerUpId): void {
+    const key = bake(this, `rain-drop-${gift ? 'gold' : 'blue'}`, 110, 140, (g) => {
+      g.fillStyle(gift ? 0xd9a400 : 0x2f7fd6, 1);
       g.fillCircle(55, 92, 44);
       g.fillTriangle(15, 80, 95, 80, 55, 6);
-      g.fillStyle(0x6fc0ff, 1);
+      g.fillStyle(gift ? 0xffd23f : 0x6fc0ff, 1);
       g.fillCircle(55, 86, 42);
       g.fillTriangle(17, 74, 93, 74, 55, 2);
       g.fillStyle(0xffffff, 0.8);
@@ -99,13 +112,13 @@ export class GrumbleBossScene extends GameBase {
       g.fillStyle(0xffffff, 1);
       g.fillRoundedRect(0, 0, labelW, 70, 35);
     });
-    const label = new WordLabel(this, 0, 92, text, 50);
+    const label = new WordLabel(this, 0, 92, text, 50).setScale(this.bigLetters ? 1.4 : 1);
     const c = this.add.container(this.grumble.x + Phaser.Math.Between(-120, 120), this.grumble.y + 60, [
       this.add.image(0, 0, key),
       this.add.image(0, 95, pill),
       label,
     ]);
-    const d: Drop = { text, typed: 0, c, label, gone: false };
+    const d: Drop = { text, typed: 0, c, label, gone: false, gift };
     this.drops.push(d);
     const x = Phaser.Math.Between(260, GAME_W - 260);
     this.tweens.add({ targets: c, x, duration: 1200, ease: 'Sine.easeOut' });
@@ -130,7 +143,7 @@ export class GrumbleBossScene extends GameBase {
       this.guide(next);
       this.updateDebug();
     }
-    if (this.spawned < this.items.length && !this.drops.some((d) => !d.gone) && !this.grumble.mood.startsWith('sneezy')) this.sneezeDrop();
+    if (this.spawned < this.items.length && !this.drops.some((d) => !d.gone && !d.gift) && !this.grumble.mood.startsWith('sneezy')) this.sneezeDrop();
   }
 
   protected onChar(e: KeyInputEvent): void {
@@ -142,7 +155,12 @@ export class GrumbleBossScene extends GameBase {
     }
     this.hit(res.expected, e);
     res.target.label.setTyped(res.target.typed);
-    if (res.result === 'complete') this.bloom(res.target);
+    if (res.result === 'complete' && res.target.gift) {
+      res.target.gone = true;
+      this.tweens.killTweensOf(res.target.c);
+      this.tweens.add({ targets: res.target.c, scale: 1.6, alpha: 0, duration: 250, onComplete: () => res.target.c.destroy() });
+      this.activate(res.target.gift);
+    } else if (res.result === 'complete') this.bloom(res.target);
     else this.tweens.add({ targets: res.target.c, scale: 1.1, duration: 80, yoyo: true });
     this.lastGuide = undefined;
   }
@@ -176,6 +194,11 @@ export class GrumbleBossScene extends GameBase {
     if (d.gone) return;
     d.gone = true;
     this.targeter.drop(d);
+    if (d.gift) {
+      d.c.destroy();
+      this.lastGuide = undefined;
+      return this.giftGone();
+    }
     this.escaped(d.text.slice(d.typed));
     const { x } = d.c;
     d.c.destroy();
@@ -194,7 +217,7 @@ export class GrumbleBossScene extends GameBase {
     this.setProgress(this.resolved, this.items.length);
     if (this.resolved < this.items.length) return;
     this.spawnTimer?.remove();
-    this.updateDebug({ made: this.drops.length, items: this.items.length });
+    this.updateDebug({ made: this.drops.filter((d) => !d.gift).length, items: this.items.length });
     this.grumble.restMood = 'happy';
     this.grumble.setMood('happy');
     this.tweens.add({ targets: this.sunny, alpha: 1, duration: 800 });

@@ -21,11 +21,13 @@ npm run build      # typecheck + production build into dist/
 ## Where things live
 
 - `src/input/` – keyboard events (`KeyboardInput.ts`) and the Mac key layout with finger assignments (`keyLayout.ts`)
-- `src/ui/` – on-screen keyboard, target tiles, buttons, speech bubbles
-- `src/engine/` – typing session scoring (accuracy, WPM, stars) and the seeded RNG
-- `src/curriculum/` – key introduction order, word bank, drill generator
+- `src/ui/` – on-screen keyboard, target tiles, buttons, speech bubbles, HUD, banners
+- `src/engine/` – scoring, mastery (fading hints), progress and unlocks, power-ups, leaderboards, daily adventure, ranks and badges
+- `src/curriculum/` – key introduction order, word bank, drills, World 1 levels, speed-race passages
+- `src/games/` – the mini-games (Finger Fitness, Key Hop, Bubble Pop, Grumble's Rainy Day) on a shared `GameBase`
+- `src/scenes/` – title, players, story, world map, workshop, garden, rocket race, leaderboard, shop, treehouse, sticker book, grown-ups
+- `src/shop/` – the shop catalogue
 - `src/save/` – player profiles and progress, with versioned migrations
-- `src/art/` – original SVG characters and scenery; static shapes are baked into textures (`bake.ts`)
-- `src/scenes/` – Title, ProfileSelect, NewPlayer, Workshop
+- `src/art/` – original characters, scenery, shop items and avatar; static shapes are baked into textures (`bake.ts`)
 
 Fonts: Andika and Fredoka (SIL Open Font License), bundled in `public/assets/fonts/`.

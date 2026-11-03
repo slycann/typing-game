@@ -5,11 +5,15 @@ import { bake } from '../art/bake';
 import { Grumble } from '../art/Grumble';
 import { INK, INK_CSS, PALETTE, darken, lighten } from '../art/palette';
 import { cloud, flower, hills, sky, sun, tree } from '../art/scenery';
-import { critterImage } from '../art/textures';
+import { Avatar } from '../art/Avatar';
 import { FONT_BODY, FONT_TITLE, GAME_W } from '../config';
 import { COMING_SOON, GAME_NAMES, GAME_SCENES, WORLDS, type LevelDef } from '../curriculum/worlds';
 import { debug } from '../debug';
+import { DAILY_TASKS, dailyDone, lastWeek } from '../engine/Daily';
 import { currentLevelIndex, isLevelUnlocked, totalStars } from '../engine/Progress';
+import { bloomTexture } from '../art/blooms';
+import { itemImage } from '../art/items';
+import { Letterling } from '../art/Letterling';
 import type { Profile } from '../save/types';
 import { currentProfile } from '../state';
 import { Button } from '../ui/Button';
@@ -32,12 +36,21 @@ const POSITIONS: [number, number][] = [
 const SIGN: [number, number] = [1150, 830];
 const NODE_COLORS = { fingerFitness: PALETTE.orange, keyHop: PALETTE.green, bubblePop: PALETTE.blue, boss: PALETTE.purple } as const;
 
+/** Places to visit besides levels: press 1–5 (or click). */
+const DOCK = [
+  { scene: 'PracticeGarden', label: 'Garden', color: PALETTE.green },
+  { scene: 'SpeedRace', label: 'Race', color: PALETTE.red },
+  { scene: 'Shop', label: 'Shop', color: PALETTE.hotPink },
+  { scene: 'Treehouse', label: 'Treehouse', color: PALETTE.orange },
+  { scene: 'StickerBook', label: 'Stickers', color: PALETTE.purple },
+];
+
 /** Home Row Meadow: a winding path of levels. Arrow keys walk your critter; return plays. */
 export class WorldMapScene extends Phaser.Scene {
   private profile!: Profile;
   private stops: Stop[] = [];
   private sel = 0;
-  private avatar!: Phaser.GameObjects.Image;
+  private avatar!: Avatar;
   private card!: Phaser.GameObjects.Container;
   private hopping = false;
 
@@ -88,10 +101,12 @@ export class WorldMapScene extends Phaser.Scene {
 
     this.sel = Phaser.Math.Clamp(data?.focus ?? currentLevelIndex(this.profile, 1) + 1, 0, this.stops.length - 1);
     const s = this.stops[this.sel];
-    this.avatar = critterImage(this, s.x, s.y - 30, this.profile.animal, this.profile.outfit, 0.62).setDepth(50);
+    this.avatar = new Avatar(this, s.x, s.y - 30, this.profile, 0.62).setDepth(50);
     this.tweens.add({ targets: this.avatar, scaleY: this.avatar.scaleY * 1.04, duration: 700, yoyo: true, repeat: -1 });
     this.card = this.add.container(1560, 975).setDepth(60);
     this.showCard();
+    this.makeDock();
+    this.makeToday();
     this.time.delayedCall(400, () => narrator.say(`${world.name}! Use the arrow keys to pick a level, then press return.`));
 
     onKeys(this, (e) => {
@@ -100,7 +115,90 @@ export class WorldMapScene extends Phaser.Scene {
       else if (e.code === 'ArrowLeft' || e.code === 'ArrowUp') this.move(-1);
       else if ((e.code === 'Enter' || e.code === 'Space') && !e.repeat) this.enter();
       else if (e.code === 'Escape') goTo(this, 'ProfileSelect');
+      else if (/^Digit[1-5]$/.test(e.code) && !e.repeat) this.openDock(Number(e.code.slice(5)) - 1);
     });
+  }
+
+  private openDock(i: number): void {
+    sfx.select();
+    narrator.stop();
+    goTo(this, DOCK[i].scene);
+  }
+
+  private makeDock(): void {
+    DOCK.forEach((d, i) => {
+      const x = 90 + i * 150;
+      const y = 962;
+      const key = bake(this, `dock-${d.label}`, 124, 130, (g) => {
+        g.fillStyle(darken(d.color, 0.3), 1);
+        g.fillCircle(62, 68, 58);
+        g.fillStyle(d.color, 1);
+        g.fillCircle(62, 62, 58);
+        g.fillStyle(0xffffff, 0.35);
+        g.fillCircle(62, 62, 44);
+      });
+      const c = this.add.container(x, y).setDepth(40);
+      c.add(this.add.image(0, 0, key));
+      const icon =
+        d.label === 'Garden'
+          ? this.add.image(0, -4, bloomTexture(this, 4)).setScale(0.85)
+          : d.label === 'Race'
+            ? this.add.image(0, 0, bake(this, 'dock-rocket', 70, 70, (g) => {
+                g.fillStyle(0xeef3ff, 1);
+                g.fillRoundedRect(22, 16, 26, 44, 12);
+                g.fillStyle(PALETTE.red, 1);
+                g.fillTriangle(22, 22, 48, 22, 35, 0);
+                g.fillTriangle(22, 50, 12, 66, 22, 60);
+                g.fillTriangle(48, 50, 58, 66, 48, 60);
+                g.fillStyle(PALETTE.orange, 1);
+                g.fillTriangle(26, 60, 44, 60, 35, 72);
+              })).setAngle(45)
+            : d.label === 'Shop'
+              ? itemImage(this, 'party-hat', 0, 26, 0.75)
+              : d.label === 'Treehouse'
+                ? this.add.image(0, 0, 'map-house').setScale(0.5)
+                : new Letterling(this, 0, 34, 'a', 62);
+      c.add(icon);
+      const cap = bake(this, 'dock-key', 44, 44, (g) => {
+        g.fillStyle(INK, 1);
+        g.fillRoundedRect(0, 4, 44, 40, 10);
+        g.fillStyle(0xfff4dc, 1);
+        g.fillRoundedRect(0, 0, 44, 40, 10);
+      });
+      c.add(this.add.image(46, -46, cap));
+      c.add(this.add.text(46, -48, String(i + 1), { fontFamily: FONT_TITLE, fontSize: '28px', color: INK_CSS }).setOrigin(0.5));
+      c.add(this.add.text(0, 72, d.label, { fontFamily: FONT_TITLE, fontSize: '30px', color: '#ffffff', stroke: INK_CSS, strokeThickness: 6 }).setOrigin(0.5));
+      const zone = this.add.zone(0, 0, 124, 124).setInteractive({ useHandCursor: true });
+      zone.on('pointerdown', () => this.openDock(i));
+      zone.on('pointerover', () => c.setScale(1.08));
+      zone.on('pointerout', () => c.setScale(1));
+      c.add(zone);
+    });
+  }
+
+  /** Today's Adventure: three ticks, and a gentle week of dots (nothing is ever lost). */
+  private makeToday(): void {
+    const done = dailyDone(this.profile);
+    const c = this.add.container(1650, 205).setDepth(40);
+    const key = bake(this, 'today-card', 460, 150, (g) => {
+      g.fillStyle(INK, 1);
+      g.fillRoundedRect(0, 8, 460, 142, 32);
+      g.fillStyle(0xffffff, 1);
+      g.fillRoundedRect(0, 0, 460, 142, 32);
+    });
+    c.add(this.add.image(0, 0, key));
+    c.add(this.add.text(-200, -46, "Today's adventure", { fontFamily: FONT_TITLE, fontSize: '32px', color: INK_CSS }).setOrigin(0, 0.5));
+    DAILY_TASKS.forEach((t, i) => {
+      const ok = done.includes(t.id);
+      const x = -200 + i * 140;
+      c.add(this.add.circle(x + 14, 4, 16, ok ? PALETTE.green : 0xe8e2f5).setStrokeStyle(3, INK));
+      if (ok) c.add(this.add.text(x + 14, 2, '✓', { fontFamily: FONT_BODY, fontSize: '26px', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5));
+      c.add(this.add.text(x + 38, 4, ['Garden', 'Level', 'Race'][i], { fontFamily: FONT_BODY, fontSize: '26px', color: INK_CSS, fontStyle: 'bold' }).setOrigin(0, 0.5));
+    });
+    lastWeek(this.profile).forEach((played, i) => {
+      c.add(this.add.circle(-200 + 12 + i * 36, 48, 11, played ? PALETTE.yellow : 0xe8e2f5).setStrokeStyle(2, darken(PALETTE.yellow, 0.3)));
+    });
+    c.add(this.add.text(64, 48, 'this week', { fontFamily: FONT_BODY, fontSize: '22px', color: '#7a6a9a', fontStyle: 'bold' }).setOrigin(0, 0.5));
   }
 
   private unlocked(i: number): boolean {
@@ -142,7 +240,7 @@ export class WorldMapScene extends Phaser.Scene {
         }),
     });
     const prev = this.stops[next - dir];
-    if (s.x !== prev.x) this.avatar.setFlipX(s.x < prev.x); // face the way we're hopping
+    if (s.x !== prev.x) this.avatar.face(s.x < prev.x); // face the way we're hopping
   }
 
   private enter(): void {

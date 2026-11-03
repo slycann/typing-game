@@ -6,12 +6,14 @@ import { Grumble } from '../art/Grumble';
 import { Letterling } from '../art/Letterling';
 import { INK, INK_CSS, PALETTE } from '../art/palette';
 import { cloud, flower, hills, sky, sun } from '../art/scenery';
-import { critterImage } from '../art/textures';
+import { Avatar } from '../art/Avatar';
 import { FONT_BODY, FONT_TITLE, GAME_W } from '../config';
 import { GAME_SCENES, levelById } from '../curriculum/worlds';
 import { debug } from '../debug';
 import type { ResultsData } from '../games/GameBase';
-import { currentProfile } from '../state';
+import { BADGES } from '../engine/Achievements';
+import { currentProfile, session } from '../state';
+import { badgeBanners, banner } from '../ui/Toast';
 import { Button } from '../ui/Button';
 import { ProfileBadge } from '../ui/Hud';
 import { drawStar } from '../ui/OnScreenKeyboard';
@@ -38,7 +40,7 @@ export class ResultsScene extends Phaser.Scene {
     [[220, 900, PALETTE.pink], [420, 960, PALETTE.yellow], [1500, 930, PALETTE.purple], [1700, 980, PALETTE.red]].forEach(([x, y, c]) => flower(this, x, y, c, 1.1));
 
     const badge = new ProfileBadge(this, profile);
-    const avatar = critterImage(this, 300, 1010, profile.animal, profile.outfit, 1.25);
+    const avatar = new Avatar(this, 300, 1010, profile, 1.25);
     this.tweens.add({ targets: avatar, y: 960, duration: 280, yoyo: true, repeat: -1, ease: 'Quad.easeOut', repeatDelay: 300 });
 
     // The big panel with stars
@@ -62,7 +64,7 @@ export class ResultsScene extends Phaser.Scene {
       const star = this.add.image(GAME_W / 2 - 200 + i * 200, 300, key).setScale(0);
       this.tweens.add({ targets: star, scale: 1, angle: 360, delay: 300 + i * 300, duration: 450, ease: 'Back.easeOut', onStart: () => on && sfx.good(i * 2) });
     }
-    const lines = [`${data.correct} keys right!   Best streak: ${data.bestStreak}`, `+${data.coins} coins${data.newBest && !data.firstClear ? '   New best!' : ''}`];
+    const lines = [`${data.correct} keys right!   Best streak: ${data.bestStreak}`, `+${data.coins} coins${data.rainbow ? ' (rainbow x2!)' : ''}${data.newBest && !data.firstClear ? '   New best!' : ''}`];
     this.add.text(GAME_W / 2, 440, lines.join('\n'), { fontFamily: FONT_BODY, fontSize: '42px', color: INK_CSS, fontStyle: 'bold', align: 'center' }).setOrigin(0.5);
     badge.flyCoins(GAME_W / 2, 470, data.coins, 1200);
 
@@ -90,7 +92,24 @@ export class ResultsScene extends Phaser.Scene {
     this.time.delayedCall(500, () =>
       narrator.say(`${praise} You got ${data.stars} star${data.stars === 1 ? '' : 's'}! ${rescuedLine} Press return to go back to the map.`),
     );
-    debug.info = { stars: data.stars, coins: data.coins, rescued: data.newStickers };
+    // Big news, one banner at a time.
+    let at = 2600;
+    if (data.rankUp) {
+      banner(this, `Rank up! You're now ${/^[AEIOU]/.test(data.rankUp) ? 'an' : 'a'} ${data.rankUp}!`, 'Keep typing to grow!', at, false);
+      at += 3600;
+    }
+    if (data.dailyDone) {
+      banner(this, "Today's adventure done!", '+15 bonus coins!', at, false);
+      at += 3600;
+    }
+    badgeBanners(this, BADGES.filter((b) => data.newBadges.includes(b.id)), at);
+    if (!session.breakReminded && Date.now() - session.startedAt > 15 * 60 * 1000) {
+      session.breakReminded = true;
+      this.time.delayedCall(at + data.newBadges.length * 3600, () => {
+        banner(this, 'Time for a stretch!', 'Wiggle your fingers and have a drink of water.', 0, true);
+      });
+    }
+    debug.info = { stars: data.stars, coins: data.coins, rescued: data.newStickers, badges: data.newBadges, dailyDone: data.dailyDone };
 
     onKeys(this, (e) => {
       if (e.type !== 'down' || e.repeat) return;

@@ -28,6 +28,19 @@ export interface Profile {
   bestStreak: number;
   /** Story scenes and one-time hints already shown. */
   seen: string[];
+  /** Shop items bought. */
+  owned: string[];
+  wearing: { hat: string | null; glasses: string | null; pet: string | null };
+  /** Treehouse slot -> decoration id. */
+  treehouse: Record<string, string | null>;
+  /** Today's adventure: which tasks are done on which day (YYYY-MM-DD). */
+  daily: { day: string; done: string[] };
+  /** Days this player has played (YYYY-MM-DD), newest last; kept short. */
+  daysPlayed: string[];
+  badges: string[];
+  /** Best net words-per-minute per speed board, for the ghost rocket. */
+  bestSpeed: Record<string, number>;
+  gardenRuns: number;
 }
 
 export interface LeaderboardEntry {

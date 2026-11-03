@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { sfx } from '../audio/Sfx';
 import { bake } from '../art/bake';
 import { INK_CSS, PALETTE, darken } from '../art/palette';
-import { critterImage } from '../art/textures';
+import { Avatar } from '../art/Avatar';
 import { FONT_BODY, FONT_TITLE } from '../config';
 import type { Profile } from '../save/types';
 
@@ -35,12 +35,18 @@ export class ProfileBadge extends Phaser.GameObjects.Container {
     this.coinText = scene.add.text(410, 60, String(profile.coins), { fontFamily: FONT_BODY, fontSize: '42px', color: INK_CSS, fontStyle: 'bold' }).setOrigin(0, 0.5);
     this.add([
       scene.add.image(0, 0, pill).setOrigin(0, 0),
-      critterImage(scene, 60, 116, profile.animal, profile.outfit, 0.33),
+      new Avatar(scene, 60, 116, profile, 0.33, false),
       scene.add.text(126, 60, profile.name, { fontFamily: FONT_TITLE, fontSize: '46px', color: INK_CSS }).setOrigin(0, 0.5),
       this.coinIcon,
       this.coinText,
     ]);
     scene.add.existing(this);
+  }
+
+  setCoins(n: number): void {
+    this.shown = n;
+    this.coinText.setText(String(n));
+    this.scene.tweens.add({ targets: this.coinIcon, scale: { from: 1.4, to: 1 }, duration: 200 });
   }
 
   /** Coins pop out of (fromX, fromY) and fly into the badge, counting up as they land. */

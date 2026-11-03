@@ -4,7 +4,7 @@ import { bake } from '../art/bake';
 import { Letterling } from '../art/Letterling';
 import { INK_CSS, PALETTE, darken } from '../art/palette';
 import { cloud, hills, sky, sun } from '../art/scenery';
-import { critterImage } from '../art/textures';
+import { Avatar } from '../art/Avatar';
 import { FONT_BODY, GAME_W } from '../config';
 import type { KeyInputEvent } from '../input/KeyboardInput';
 import { confetti } from '../scenes/common';
@@ -22,7 +22,7 @@ export class KeyHopScene extends GameBase {
   private idx = 0;
   private track!: Phaser.GameObjects.Container;
   private pads: Phaser.GameObjects.Container[] = [];
-  private critter!: Phaser.GameObjects.Image;
+  private critter!: Avatar;
   private friends: Letterling[] = [];
 
   constructor() {
@@ -92,7 +92,7 @@ export class KeyHopScene extends GameBase {
     });
 
     this.items.forEach((ch, i) => this.track.add(this.makePad(ch, this.padX(i), i)));
-    this.critter = critterImage(this, START_X, PAD_Y + 4, this.profile.animal, this.profile.outfit, 0.62);
+    this.critter = new Avatar(this, START_X, PAD_Y + 4, this.profile, 0.62, false);
     this.track.add(this.critter);
   }
 
