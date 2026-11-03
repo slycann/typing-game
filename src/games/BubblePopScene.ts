@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
 import { sfx } from '../audio/Sfx';
 import { bake } from '../art/bake';
-import { cloud, flower, hills, sky, sun } from '../art/scenery';
+import { flower } from '../art/scenery';
+import { backdrop } from '../art/themes';
 import { characterImage } from '../art/textures';
 import { PALETTE } from '../art/palette';
 import { ageIndex } from '../curriculum/worlds';
@@ -52,11 +53,7 @@ export class BubblePopScene extends GameBase {
     this.resolved = 0;
     this.lastGuide = undefined;
     this.spawnTimer = null;
-    sky(this);
-    sun(this, 1720, 230, 60);
-    cloud(this, 700, 250, 0.6);
-    cloud(this, 1300, 190, 0.5);
-    hills(this, 400);
+    backdrop(this, this.theme, 400, { sun: [1720, 230], clouds: [[700, 250, 0.6], [1300, 190, 0.5]] });
     [[620, 640, PALETTE.pink], [1000, 620, PALETTE.yellow], [1450, 650, PALETTE.purple], [1780, 630, PALETTE.red]].forEach(([x, y, c]) => flower(this, x, y, c, 0.9));
     this.juni = characterImage(this, 'juni', 170, PLAY_BOTTOM + 10, 0.95);
     // bubble wand
@@ -161,8 +158,7 @@ export class BubblePopScene extends GameBase {
   }
 
   protected onChar(e: KeyInputEvent): void {
-    const typed = e.capsLock && e.char ? e.char.toLowerCase() : e.char!;
-    const res = this.targeter.input(typed, this.ordered());
+    const res = this.targeter.input(this.typedChar(e), this.ordered());
     if (res.result === 'wrong') {
       this.miss(res.expected, e);
       return;

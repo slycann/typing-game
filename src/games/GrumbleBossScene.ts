@@ -62,8 +62,8 @@ export class GrumbleBossScene extends GameBase {
     this.spawnTimer = null;
     sky(this, 0x7f8fbf, 0xc9d3ee);
     // The sunny sky fades in as Grumble cheers up.
-    this.sunny = sky(this).setAlpha(0);
-    hills(this, 470, [0x8fd36a, 0x6cbf4f, 0x55a844]);
+    this.sunny = sky(this, this.theme.skyTop, this.theme.skyBottom).setAlpha(0);
+    hills(this, 470, this.theme.hills);
     this.grumble = new Grumble(this, GAME_W / 2, 290, 1.05);
   }
 
@@ -147,8 +147,7 @@ export class GrumbleBossScene extends GameBase {
   }
 
   protected onChar(e: KeyInputEvent): void {
-    const typed = e.capsLock && e.char ? e.char.toLowerCase() : e.char!;
-    const res = this.targeter.input(typed, this.ordered());
+    const res = this.targeter.input(this.typedChar(e), this.ordered());
     if (res.result === 'wrong') {
       this.miss(res.expected, e);
       return;

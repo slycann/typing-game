@@ -6,8 +6,8 @@ import { FINGER_FRIENDS, INK, INK_CSS } from '../art/palette';
 import { bunting, cloud, hills, sky } from '../art/scenery';
 import { FONT_BODY, FONT_TITLE } from '../config';
 import type { KeyInputEvent } from '../input/KeyboardInput';
-import { KEY_BY_CODE, strokeForChar, type Finger } from '../input/keyLayout';
-import { FINGER_WORDS, GameBase } from './GameBase';
+import { KEY_BY_CODE, howToType, strokeForChar, type Finger } from '../input/keyLayout';
+import { GameBase } from './GameBase';
 
 const CHEERS = ['Nice!', 'Yes!', 'Strong finger!', 'Woo!', 'Great!'];
 
@@ -68,7 +68,7 @@ export class FingerFitnessScene extends GameBase {
       .text(1180, 370, 'Ready?', { fontFamily: FONT_TITLE, fontSize: '120px', color: '#ff5fa2', stroke: INK_CSS, strokeThickness: 12 })
       .setOrigin(0.5);
     this.promptSub = this.add
-      .text(1180, 480, '', { fontFamily: FONT_BODY, fontSize: '40px', color: INK_CSS, fontStyle: 'bold' })
+      .text(1180, 485, '', { fontFamily: FONT_BODY, fontSize: '34px', color: INK_CSS, fontStyle: 'bold', align: 'center', wordWrap: { width: 760 } })
       .setOrigin(0.5);
   }
 
@@ -94,7 +94,8 @@ export class FingerFitnessScene extends GameBase {
     this.coach.setTexture(fingerFriendKey(this, finger, 130, { headband: true }));
     this.coachName.setText(friend);
     this.tweens.add({ targets: this.coach, scale: { from: 0.7, to: 1 }, duration: 260, ease: 'Back.easeOut' });
-    const label = ch === ' ' ? 'SPACE' : ch.toUpperCase();
+    const label = ch === ' ' ? 'SPACE' : /[a-z]/.test(ch) ? ch.toUpperCase() : /[A-Z]/.test(ch) ? `big ${ch}` : ch;
+    const tip = howToType(ch);
     this.prompt.setText(`Press ${label}!`).setScale(0.6);
     this.tweens.add({ targets: this.prompt, scale: 1, duration: 260, ease: 'Back.easeOut' });
 
@@ -102,10 +103,10 @@ export class FingerFitnessScene extends GameBase {
     const lateHalf = this.idx >= Math.floor(this.items.length / 2) && this.profile.ageBand !== '5-6';
     if (lateHalf) {
       this.kb.setTargets([]);
-      this.promptSub.setText(`Use ${friend}, your ${FINGER_WORDS[finger]} finger. No peeking!`);
+      this.promptSub.setText(`${tip} No peeking!`);
     } else {
       this.guide(ch);
-      this.promptSub.setText(`Use ${friend}, your ${FINGER_WORDS[finger]} finger.`);
+      this.promptSub.setText(tip);
     }
     narrator.say(`${friend} says: press ${narrator.nameOf(ch)}!`);
     this.updateDebug({ hinted: !lateHalf });
@@ -114,7 +115,7 @@ export class FingerFitnessScene extends GameBase {
   protected onChar(e: KeyInputEvent): void {
     if (this.waiting) return;
     const expected = this.items[this.idx];
-    const typed = e.capsLock && e.char ? e.char.toLowerCase() : e.char;
+    const typed = this.typedChar(e);
     if (typed === expected) {
       this.hit(expected, e);
       this.waiting = true;

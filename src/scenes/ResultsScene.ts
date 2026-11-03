@@ -8,7 +8,7 @@ import { INK, INK_CSS, PALETTE } from '../art/palette';
 import { cloud, flower, hills, sky, sun } from '../art/scenery';
 import { Avatar } from '../art/Avatar';
 import { FONT_BODY, FONT_TITLE, GAME_W } from '../config';
-import { GAME_SCENES, levelById } from '../curriculum/worlds';
+import { GAME_SCENES, LAST_WORLD, levelById, type LevelDef } from '../curriculum/worlds';
 import { debug } from '../debug';
 import type { ResultsData } from '../games/GameBase';
 import { BADGES } from '../engine/Achievements';
@@ -84,7 +84,7 @@ export class ResultsScene extends Phaser.Scene {
     }
 
     new Button(this, GAME_W / 2 - 230, 640, 'Play again', () => this.again(level.game, level.id), { width: 400, height: 120, fontSize: 48, color: PALETTE.blue, keyHint: 'space' });
-    new Button(this, GAME_W / 2 + 230, 640, 'Map', () => this.toMap(), { width: 340, height: 120, fontSize: 48, color: PALETTE.green, keyHint: 'return' });
+    new Button(this, GAME_W / 2 + 230, 640, 'Map', () => this.toMap(level, data.firstClear), { width: 340, height: 120, fontSize: 48, color: PALETTE.green, keyHint: 'return' });
 
     sfx.cheer();
     this.time.delayedCall(200, () => confetti(this, GAME_W / 2, 300, 90));
@@ -114,7 +114,7 @@ export class ResultsScene extends Phaser.Scene {
     onKeys(this, (e) => {
       if (e.type !== 'down' || e.repeat) return;
       if (e.code === 'Space') this.again(level.game, level.id);
-      else if (e.code === 'Enter' || e.code === 'Escape') this.toMap();
+      else if (e.code === 'Enter' || e.code === 'Escape') this.toMap(level, data.firstClear);
     });
   }
 
@@ -123,9 +123,13 @@ export class ResultsScene extends Phaser.Scene {
     goTo(this, GAME_SCENES[game], { levelId });
   }
 
-  private toMap(): void {
+  private toMap(level: LevelDef, firstClear: boolean): void {
     sfx.select();
-    goTo(this, 'WorldMap');
+    const p = currentProfile();
+    if (level.game === 'boss' && level.world === LAST_WORLD && p && !p.seen.includes('finale')) return goTo(this, 'Story', { story: 'finale' });
+    // After cheering up Grumble the first time, stand by the newly opened portal.
+    if (level.game === 'boss' && firstClear) return goTo(this, 'WorldMap', { world: level.world, focus: 13 });
+    goTo(this, 'WorldMap', { world: level.world });
   }
 
   private drawRainbow(): void {

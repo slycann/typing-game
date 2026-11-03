@@ -16,7 +16,7 @@ import { mergeKeyStats } from '../engine/Progress';
 import { Rng } from '../engine/Rng';
 import { TypingSession, wpmFor } from '../engine/TypingSession';
 import { keyboard, type KeyInputEvent } from '../input/KeyboardInput';
-import { strokeForChar } from '../input/keyLayout';
+import { strokeCodes, strokeForChar } from '../input/keyLayout';
 import type { Profile } from '../save/types';
 import { currentProfile, store } from '../state';
 import { Button } from '../ui/Button';
@@ -318,7 +318,7 @@ export class SpeedRaceScene extends Phaser.Scene {
     this.renderLine();
     const ch = this.session.expected;
     const stroke = ch ? strokeForChar(ch) : null;
-    this.kb.setTargets(stroke && ch && hintsFor(this.profile, ch).glow ? [stroke.code] : []);
+    this.kb.setTargets(ch && hintsFor(this.profile, ch).glow ? strokeCodes(stroke) : []);
     debug.info = { ...debug.info, expected: ch, correct: this.session.correct };
   }
 

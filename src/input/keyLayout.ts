@@ -163,7 +163,25 @@ export interface KeyStroke {
   shift: boolean;
   /** Which Shift key to use (the one on the opposite hand). */
   shiftCode?: string;
+  /** Hold Option (Mac) — the one on the opposite hand. */
+  altCode?: string;
+  /** Accent keys: after Option+code, let go and press this key. */
+  then?: string;
 }
+
+// Mac Option-key characters taught in Option Observatory (US layout).
+const OPTION_CHARS: Record<string, { code: string; shift?: boolean; then?: string }> = {
+  é: { code: 'KeyE', then: 'KeyE' },
+  ñ: { code: 'KeyN', then: 'KeyN' },
+  ü: { code: 'KeyU', then: 'KeyU' },
+  '©': { code: 'KeyG' },
+  '™': { code: 'Digit2' },
+  '°': { code: 'Digit8', shift: true },
+  '÷': { code: 'Slash' },
+  ß: { code: 'KeyS' },
+  '¡': { code: 'Digit1' },
+  '¿': { code: 'Slash', shift: true },
+};
 
 function buildCharMap(): Map<string, KeyStroke> {
   const map = new Map<string, KeyStroke>();
@@ -180,10 +198,45 @@ function buildCharMap(): Map<string, KeyStroke> {
   }
   map.set('\n', { code: 'Enter', shift: false });
   map.set('\t', { code: 'Tab', shift: false });
+  for (const [ch, o] of Object.entries(OPTION_CHARS)) {
+    const left = KEY_BY_CODE.get(o.code)!.hand === 'left';
+    map.set(ch, {
+      code: o.code,
+      shift: !!o.shift,
+      shiftCode: o.shift ? (left ? 'ShiftRight' : 'ShiftLeft') : undefined,
+      altCode: left ? 'AltRight' : 'AltLeft',
+      then: o.then,
+    });
+  }
   return map;
 }
 
 const CHAR_MAP = buildCharMap();
+
+/** Every key to light up for a character: the key itself plus any Shift/Option to hold. */
+export function strokeCodes(s: KeyStroke | null): string[] {
+  if (!s) return [];
+  return [s.code, ...(s.shiftCode ? [s.shiftCode] : []), ...(s.altCode ? [s.altCode] : [])];
+}
+
+const FRIEND = { pinky: 'Pip', ring: 'Rory', middle: 'Midge', index: 'Izzy', thumb: 'Thumbs' } as const;
+const FINGER_WORD = { pinky: 'pinky', ring: 'ring', middle: 'middle', index: 'pointer', thumb: 'thumb' } as const;
+
+/** A short, kid-friendly "how do I type this?" for hints and instructions. */
+export function howToType(ch: string): string {
+  const s = strokeForChar(ch);
+  const key = s && KEY_BY_CODE.get(s.code);
+  if (!s || !key) return '';
+  const label = ch === ' ' ? 'the space bar' : key.kind === 'char' ? key.label.split(' ')[0] : key.label;
+  const side = (code?: string) => (code?.endsWith('Right') ? 'right' : 'left');
+  if (s.altCode) {
+    const hold = `Hold the ${side(s.altCode)} option${s.shiftCode ? ' and shift' : ''} and press ${label}`;
+    return s.then ? `${hold}, let go, then press ${label} again.` : `${hold}.`;
+  }
+  const finger = `${FRIEND[key.finger]}, your ${FINGER_WORD[key.finger]} finger`;
+  if (s.shift) return `Hold the ${side(s.shiftCode)} shift and press ${label} with ${finger}.`;
+  return `Use ${finger}.`;
+}
 
 /** The physical key (and Shift) needed to type a character, or null if it isn't on the keyboard. */
 export function strokeForChar(char: string): KeyStroke | null {

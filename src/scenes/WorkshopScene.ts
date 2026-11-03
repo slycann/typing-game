@@ -12,7 +12,7 @@ import { debug } from '../debug';
 import { Rng } from '../engine/Rng';
 import { starsForAccuracy, TypingSession } from '../engine/TypingSession';
 import { keyboard, type KeyInputEvent } from '../input/KeyboardInput';
-import { KEY_BY_CODE, strokeForChar, type Finger } from '../input/keyLayout';
+import { KEY_BY_CODE, strokeCodes, strokeForChar, type Finger } from '../input/keyLayout';
 import { hintsFor, unlockedKeys } from '../engine/Mastery';
 import type { Profile } from '../save/types';
 import { currentProfile, store } from '../state';
@@ -180,7 +180,7 @@ export class WorkshopScene extends Phaser.Scene {
     const ch = this.session?.expected ?? null;
     const stroke = ch === null ? null : strokeForChar(ch);
     const glow = ch !== null && (this.missesInARow > 0 || hintsFor(this.profile, ch).glow);
-    const targets = stroke && glow ? [stroke.code, ...(stroke.shiftCode ? [stroke.shiftCode] : [])] : [];
+    const targets = glow ? strokeCodes(stroke) : [];
     if (this.capsWarned && keyboard.isDown('CapsLock')) targets.push('CapsLock');
     this.kb.setTargets(targets);
     this.updateDebug();

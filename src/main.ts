@@ -4,7 +4,12 @@ import { GAME_H, GAME_W } from './config';
 import { debug } from './debug';
 import { keyboard } from './input/KeyboardInput';
 import { store } from './state';
+import { WORLDS } from './curriculum/worlds';
+import { BakeShopScene } from './games/BakeShopScene';
 import { BubblePopScene } from './games/BubblePopScene';
+import { FruitCatchScene } from './games/FruitCatchScene';
+import { StoryPagesScene } from './games/StoryPagesScene';
+import { WordTrainScene } from './games/WordTrainScene';
 import { FingerFitnessScene } from './games/FingerFitnessScene';
 import { GrumbleBossScene } from './games/GrumbleBossScene';
 import { KeyHopScene } from './games/KeyHopScene';
@@ -50,6 +55,10 @@ const game = new Phaser.Game({
     KeyHopScene,
     BubblePopScene,
     GrumbleBossScene,
+    FruitCatchScene,
+    WordTrainScene,
+    BakeShopScene,
+    StoryPagesScene,
     ResultsScene,
     PauseScene,
     GrownupsScene,
@@ -63,5 +72,19 @@ const game = new Phaser.Game({
   ],
 });
 debug.fps = () => Math.round(game.loop.actualFps);
+if (import.meta.env.DEV) {
+  // Test-only shortcut (dev server only, never in a real build): pretend every level up to `levelId` was cleared.
+  debug.grant = async (levelId: string) => {
+    const id = store.data.lastProfileId;
+    if (!id) return;
+    await store.updateProfile(id, (p) => {
+      for (const l of WORLDS.flatMap((w) => w.levels)) {
+        p.stars[l.id] = Math.max(p.stars[l.id] ?? 0, 1);
+        for (const k of l.newKeys) if (!p.stickers.includes(k)) p.stickers.push(k);
+        if (l.id === levelId) break;
+      }
+    });
+  };
+}
 debug.profile = () => store.getProfile(store.data.lastProfileId) ?? null;
 debug.players = () => store.profiles.map((p) => ({ name: p.name, coins: p.coins, stars: Object.keys(p.stars).length, stickers: p.stickers }));

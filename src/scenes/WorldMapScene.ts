@@ -4,18 +4,18 @@ import { sfx } from '../audio/Sfx';
 import { bake } from '../art/bake';
 import { Grumble } from '../art/Grumble';
 import { INK, INK_CSS, PALETTE, darken, lighten } from '../art/palette';
-import { cloud, flower, hills, sky, sun, tree } from '../art/scenery';
+import { backdrop, decorate, themeFor } from '../art/themes';
 import { Avatar } from '../art/Avatar';
 import { FONT_BODY, FONT_TITLE, GAME_W } from '../config';
-import { COMING_SOON, GAME_NAMES, GAME_SCENES, WORLDS, type LevelDef } from '../curriculum/worlds';
+import { GAME_NAMES, GAME_SCENES, LAST_WORLD, worldById, type LevelDef, type WorldDef } from '../curriculum/worlds';
 import { debug } from '../debug';
 import { DAILY_TASKS, dailyDone, lastWeek } from '../engine/Daily';
-import { currentLevelIndex, isLevelUnlocked, totalStars } from '../engine/Progress';
+import { currentLevelIndex, furthestWorld, isLevelUnlocked, isWorldUnlocked, totalStars } from '../engine/Progress';
 import { bloomTexture } from '../art/blooms';
 import { itemImage } from '../art/items';
 import { Letterling } from '../art/Letterling';
 import type { Profile } from '../save/types';
-import { currentProfile } from '../state';
+import { currentProfile, session } from '../state';
 import { Button } from '../ui/Button';
 import { ProfileBadge } from '../ui/Hud';
 import { drawStar } from '../ui/OnScreenKeyboard';
@@ -24,7 +24,9 @@ import { enterScene, goTo, onKeys } from './common';
 interface Stop {
   x: number;
   y: number;
-  level: LevelDef | null; // null = Grandpa Qwerty's Workshop
+  level: LevelDef | null; // null = Grandpa Qwerty's Workshop (or the portal)
+  /** The world a portal at the end of the path leads to. */
+  portal?: number;
   node: Phaser.GameObjects.Container;
 }
 
@@ -34,7 +36,18 @@ const POSITIONS: [number, number][] = [
   [520, 830], [900, 830],
 ];
 const SIGN: [number, number] = [1150, 830];
-const NODE_COLORS = { fingerFitness: PALETTE.orange, keyHop: PALETTE.green, bubblePop: PALETTE.blue, boss: PALETTE.purple } as const;
+const NODE_COLORS = {
+  fingerFitness: PALETTE.orange,
+  keyHop: PALETTE.green,
+  bubblePop: PALETTE.blue,
+  fruitCatch: PALETTE.red,
+  wordTrain: PALETTE.teal,
+  bakeShop: PALETTE.hotPink,
+  storyPages: 0x7a5fc0,
+  boss: PALETTE.purple,
+} as const;
+// Scenery spots chosen to stay clear of the path, the dock and the info card.
+const DECOR_SPOTS: [number, number, number][] = [[70, 560, 0.8], [1860, 720, 0.85], [1080, 1000, 0.6]];
 
 /** Places to visit besides levels: press 1–5 (or click). */
 const DOCK = [
@@ -45,7 +58,10 @@ const DOCK = [
   { scene: 'StickerBook', label: 'Stickers', color: PALETTE.purple },
 ];
 
-/** Home Row Meadow: a winding path of levels. Arrow keys walk your critter; return plays. */
+/**
+ * A world's map: a winding path of levels. Arrow keys walk your critter (left from the workshop goes
+ * back a world, the portal at the end goes forward); return plays.
+ */
 export class WorldMapScene extends Phaser.Scene {
   private profile!: Profile;
   private stops: Stop[] = [];
@@ -53,12 +69,13 @@ export class WorldMapScene extends Phaser.Scene {
   private avatar!: Avatar;
   private card!: Phaser.GameObjects.Container;
   private hopping = false;
+  private world!: WorldDef;
 
   constructor() {
     super('WorldMap');
   }
 
-  create(data: { focus?: number }): void {
+  create(data: { world?: number; focus?: number }): void {
     enterScene(this);
     const p = currentProfile();
     if (!p) {
@@ -68,19 +85,17 @@ export class WorldMapScene extends Phaser.Scene {
     this.profile = p;
     this.stops = [];
     this.hopping = false;
-    const world = WORLDS[0];
+    const id = Phaser.Math.Clamp(data?.world || session.mapWorld || furthestWorld(p), 1, furthestWorld(p));
+    session.mapWorld = id;
+    const world = (this.world = worldById(id));
+    if (id > 1 && !p.seen.includes(`world-${id}`)) {
+      this.scene.start('Story', { story: `world-${id}` });
+      return;
+    }
 
-    sky(this);
-    sun(this, 1790, 110, 60);
-    cloud(this, 620, 120, 0.6);
-    cloud(this, 1250, 90, 0.5);
-    hills(this, 150);
-    tree(this, 90, 560, 0.8);
-    tree(this, 1850, 700, 0.9, 0x5fd35f);
-    tree(this, 1100, 960, 0.7);
-    [[300, 440, PALETTE.pink], [900, 430, PALETTE.yellow], [1500, 680, PALETTE.purple], [620, 700, PALETTE.red], [1180, 680, PALETTE.blue], [260, 990, PALETTE.yellow]].forEach(([x, y, c]) =>
-      flower(this, x, y, c, 0.8),
-    );
+    const theme = themeFor(id);
+    backdrop(this, theme, 150, { sun: [1790, 110] });
+    decorate(this, theme, DECOR_SPOTS);
     this.drawPath();
 
     this.add
@@ -97,9 +112,12 @@ export class WorldMapScene extends Phaser.Scene {
       const [x, y] = POSITIONS[i];
       this.stops.push({ x, y, level, node: this.makeNode(level, x, y, i) });
     });
-    this.makeSign();
+    if (id < LAST_WORLD) {
+      const [x, y] = SIGN;
+      this.stops.push({ x: x + 70, y, level: null, portal: id + 1, node: this.makePortal(id + 1, x + 70, y) });
+    } else this.makeSign();
 
-    this.sel = Phaser.Math.Clamp(data?.focus ?? currentLevelIndex(this.profile, 1) + 1, 0, this.stops.length - 1);
+    this.sel = Phaser.Math.Clamp(data?.focus ?? currentLevelIndex(this.profile, id) + 1, 0, this.stops.length - 1);
     const s = this.stops[this.sel];
     this.avatar = new Avatar(this, s.x, s.y - 30, this.profile, 0.62).setDepth(50);
     this.tweens.add({ targets: this.avatar, scaleY: this.avatar.scaleY * 1.04, duration: 700, yoyo: true, repeat: -1 });
@@ -202,18 +220,24 @@ export class WorldMapScene extends Phaser.Scene {
   }
 
   private unlocked(i: number): boolean {
-    const l = this.stops[i].level;
-    return !l || isLevelUnlocked(this.profile, l);
+    const s = this.stops[i];
+    if (s.portal) return isWorldUnlocked(this.profile, s.portal);
+    return !s.level || isLevelUnlocked(this.profile, s.level);
   }
 
   private move(dir: number): void {
     if (this.hopping) return;
     const next = this.sel + dir;
+    if (next < 0 && this.world.id > 1) {
+      sfx.select();
+      return goTo(this, 'WorldMap', { world: this.world.id - 1, focus: 13 });
+    }
     if (next < 0 || next >= this.stops.length) return;
     if (!this.unlocked(next)) {
       sfx.oops();
       this.tweens.add({ targets: this.avatar, x: this.avatar.x + 12 * dir, duration: 70, yoyo: true, repeat: 1 });
-      narrator.say(`That one is locked. Get a star on level ${this.stops[next - 1].level?.name ?? ''} first!`);
+      if (this.stops[next].portal) narrator.say('Cheer up Grumble first, then the way opens!');
+      else narrator.say(`That one is locked. Get a star on level ${this.stops[next - 1].level?.name ?? ''} first!`);
       return;
     }
     this.sel = next;
@@ -248,7 +272,8 @@ export class WorldMapScene extends Phaser.Scene {
     if (!this.unlocked(this.sel)) return;
     sfx.select();
     narrator.stop();
-    if (!s.level) goTo(this, 'Workshop');
+    if (s.portal) goTo(this, 'WorldMap', { world: s.portal, focus: 0 });
+    else if (!s.level) goTo(this, 'Workshop');
     else goTo(this, GAME_SCENES[s.level.game], { levelId: s.level.id });
   }
 
@@ -267,23 +292,29 @@ export class WorldMapScene extends Phaser.Scene {
     let title: string;
     let sub: string;
     let spoken: string;
-    if (!s.level) {
+    if (s.portal) {
+      const open = isWorldUnlocked(this.profile, s.portal);
+      title = `To ${worldById(s.portal).name}`;
+      sub = open ? `World ${s.portal}` : 'Cheer up Grumble to open it!';
+      spoken = `${title}. ${sub}`;
+    } else if (!s.level) {
       title = "Grandpa Qwerty's Workshop";
       sub = 'Warm up your fingers!';
       spoken = "Grandpa Qwerty's Workshop. Warm up your fingers!";
     } else {
       const l = s.level;
       title = `${l.name}  ${GAME_NAMES[l.game]}`;
-      sub = l.content === 'words' ? 'Home row words' : l.newKeys.length ? `New keys: ${l.newKeys.map((k) => k.toUpperCase()).join(' ')}` : 'Practice time';
+      const keys = l.newKeys.length > 6 ? `${l.newKeys.slice(0, 6).join(' ')} …` : l.newKeys.map((k) => (/[a-z]/.test(k) ? k.toUpperCase() : k)).join(' ');
+      sub = l.content === 'words' ? 'Typing words' : l.content === 'sentences' ? 'Typing sentences' : l.newKeys.length ? `New keys: ${keys}` : 'Practice time';
       spoken = `Level ${l.name}. ${GAME_NAMES[l.game]}.`;
     }
     this.card.add(this.add.text(-w / 2 + 40, -60, title, { fontFamily: FONT_TITLE, fontSize: '46px', color: INK_CSS }).setOrigin(0, 0.5));
     this.card.add(this.add.text(-w / 2 + 40, 4, sub, { fontFamily: FONT_BODY, fontSize: '36px', color: '#7a5fc0', fontStyle: 'bold' }).setOrigin(0, 0.5));
-    const go = this.add.text(-w / 2 + 40, 66, 'Press return to play!', { fontFamily: FONT_BODY, fontSize: '34px', color: '#ff5fa2', fontStyle: 'bold' }).setOrigin(0, 0.5);
+    const go = this.add.text(-w / 2 + 40, 66, s.portal ? 'Press return to go!' : 'Press return to play!', { fontFamily: FONT_BODY, fontSize: '34px', color: '#ff5fa2', fontStyle: 'bold' }).setOrigin(0, 0.5);
     this.card.add(go);
     this.tweens.add({ targets: go, alpha: 0.4, duration: 500, yoyo: true, repeat: -1 });
     narrator.say(spoken);
-    debug.info = { selected: this.sel, level: s.level?.id ?? 'workshop' };
+    debug.info = { selected: this.sel, world: this.world.id, level: s.portal ? `portal-${s.portal}` : (s.level?.id ?? 'workshop') };
   }
 
   private makeNode(level: LevelDef | null, x: number, y: number, i: number): Phaser.GameObjects.Container {
@@ -328,17 +359,7 @@ export class WorldMapScene extends Phaser.Scene {
       c.add(this.add.text(0, 0, String(level.index + 1), { fontFamily: FONT_TITLE, fontSize: '58px', color: '#ffffff', stroke: INK_CSS, strokeThickness: 9 }).setOrigin(0.5));
     }
     if (!open) {
-      const lock = bake(this, 'map-lock', 64, 70, (g) => {
-        g.lineStyle(9, INK, 1);
-        g.beginPath();
-        g.arc(32, 30, 17, Math.PI, 0, false);
-        g.strokePath();
-        g.fillStyle(PALETTE.yellow, 1);
-        g.fillRoundedRect(6, 28, 52, 40, 10);
-        g.fillStyle(INK, 1);
-        g.fillCircle(32, 46, 6);
-      });
-      c.add(this.add.image(r * 0.6, r * 0.5, lock));
+      c.add(this.add.image(r * 0.6, r * 0.5, this.lockKey()));
     } else {
       const got = this.profile.stars[level.id] ?? 0;
       for (let k = 0; k < 3; k++) {
@@ -358,23 +379,58 @@ export class WorldMapScene extends Phaser.Scene {
     return c;
   }
 
-  /** An arrow-shaped sign at the end of the path pointing to the next (not yet built) world. */
+  private lockKey(): string {
+    return bake(this, 'map-lock', 64, 70, (g) => {
+      g.lineStyle(9, INK, 1);
+      g.beginPath();
+      g.arc(32, 30, 17, Math.PI, 0, false);
+      g.strokePath();
+      g.fillStyle(PALETTE.yellow, 1);
+      g.fillRoundedRect(6, 28, 52, 40, 10);
+      g.fillStyle(INK, 1);
+      g.fillCircle(32, 46, 6);
+    });
+  }
+
+  /** The end of the very last world. */
   private makeSign(): void {
     const [x, y] = SIGN;
     const key = bake(this, 'map-sign', 300, 100, (g) => {
       g.fillStyle(darken(0xffd6a5, 0.25), 1);
-      g.fillRoundedRect(0, 10, 250, 86, 20);
-      g.fillTriangle(240, 10, 240, 96, 296, 53);
+      g.fillRoundedRect(0, 10, 260, 86, 20);
       g.fillStyle(0xffd6a5, 1);
-      g.fillRoundedRect(0, 4, 250, 86, 20);
-      g.fillTriangle(240, 4, 240, 90, 296, 47);
+      g.fillRoundedRect(0, 4, 260, 86, 20);
     });
     this.add.image(x - 10, y, key).setOrigin(0, 0.5).setDepth(5);
     this.add
-      .text(x + 120, y - 2, `${COMING_SOON[0]}
-coming soon!`, { fontFamily: FONT_BODY, fontSize: '27px', color: INK_CSS, fontStyle: 'bold', align: 'center' })
+      .text(x + 120, y - 2, 'The end…\nfor now!', { fontFamily: FONT_BODY, fontSize: '27px', color: INK_CSS, fontStyle: 'bold', align: 'center' })
       .setOrigin(0.5)
       .setDepth(6);
+  }
+
+  /** A rainbow archway at the end of the path leading to the next world. */
+  private makePortal(to: number, x: number, y: number): Phaser.GameObjects.Container {
+    const open = isWorldUnlocked(this.profile, to);
+    const key = bake(this, `map-portal-${open ? 1 : 0}`, 170, 170, (g) => {
+      const colors = open ? [0xff5d5d, 0xff9a3c, 0xffd23f, 0x3ccf6e, 0x3a86ff, 0x9b5de5] : [0xb9b3c9, 0xc9c3d9, 0xd9d3e9];
+      colors.forEach((c, i) => {
+        g.lineStyle(12, c, 1);
+        g.beginPath();
+        g.arc(85, 150, 76 - i * 12, Math.PI, 0, false);
+        g.strokePath();
+      });
+      g.fillStyle(open ? 0xffffff : 0xe8e2f5, open ? 0.6 : 1);
+      g.fillRect(25, 150, 120, 14);
+    });
+    const c = this.add.container(x, y).setDepth(10);
+    c.add(this.add.image(0, -30, key));
+    c.add(this.add.text(92, -36, `To ${worldById(to).name}`, { fontFamily: FONT_BODY, fontSize: '28px', color: '#ffffff', stroke: INK_CSS, strokeThickness: 6, fontStyle: 'bold' }).setOrigin(0, 0.5));
+    if (!open) {
+      c.add(this.add.image(46, 10, this.lockKey()));
+    } else {
+      this.tweens.add({ targets: c, scale: 1.06, duration: 700, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    }
+    return c;
   }
 
   private drawPath(): void {

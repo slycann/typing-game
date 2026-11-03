@@ -3,7 +3,7 @@ import { sfx } from '../audio/Sfx';
 import { bake } from '../art/bake';
 import { Letterling } from '../art/Letterling';
 import { INK_CSS, PALETTE, darken } from '../art/palette';
-import { cloud, hills, sky, sun } from '../art/scenery';
+import { backdrop } from '../art/themes';
 import { Avatar } from '../art/Avatar';
 import { FONT_BODY, GAME_W } from '../config';
 import type { KeyInputEvent } from '../input/KeyboardInput';
@@ -37,11 +37,7 @@ export class KeyHopScene extends GameBase {
     this.idx = 0;
     this.pads = [];
     this.friends = [];
-    sky(this);
-    sun(this, 1700, 220, 60);
-    cloud(this, 400, 230, 0.6);
-    cloud(this, 1150, 200, 0.5);
-    hills(this, 260);
+    backdrop(this, this.theme, 260, { sun: [1700, 220], clouds: [[400, 230, 0.6], [1150, 200, 0.5]] });
     const pond = bake(this, 'hop-pond', GAME_W, POND_BOTTOM - POND_TOP + 40, (g) => {
       const h = POND_BOTTOM - POND_TOP;
       g.fillStyle(0x2f9be0, 1);
@@ -146,7 +142,7 @@ export class KeyHopScene extends GameBase {
   protected onChar(e: KeyInputEvent): void {
     const expected = this.items[this.idx];
     if (expected === undefined) return;
-    const typed = e.capsLock && e.char ? e.char.toLowerCase() : e.char;
+    const typed = this.typedChar(e);
     if (typed !== expected) {
       this.miss(expected, e);
       this.tweens.killTweensOf(this.critter);

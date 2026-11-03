@@ -5,7 +5,8 @@ import { bake } from '../art/bake';
 import { Letterling } from '../art/Letterling';
 import { FINGER_FRIENDS, INK, INK_CSS, PALETTE, darken } from '../art/palette';
 import { FONT_BODY, FONT_TITLE, GAME_H, GAME_W } from '../config';
-import { GAME_NAMES, levelById, levelContent, type LevelDef } from '../curriculum/worlds';
+import { GAME_NAMES, levelById, levelContent, worldById, type LevelDef } from '../curriculum/worlds';
+import { themeFor, type Theme } from '../art/themes';
 import { debug } from '../debug';
 import { hintsFor, unlockedKeys } from '../engine/Mastery';
 import { POWERUPS, STREAK_FOR_POWERUP, powerUpsFor, triggerWord, typedActivation, type PowerUpId } from '../engine/PowerUps';
@@ -15,7 +16,7 @@ import { applyResult, coinsFor, type LevelResult } from '../engine/Progress';
 import { Rng } from '../engine/Rng';
 import { starsForAccuracy, type CharStat } from '../engine/TypingSession';
 import { keyboard, type KeyInputEvent } from '../input/KeyboardInput';
-import { KEY_BY_CODE, strokeForChar, type Finger } from '../input/keyLayout';
+import { KEY_BY_CODE, howToType, strokeCodes, strokeForChar, type Finger } from '../input/keyLayout';
 import type { Profile } from '../save/types';
 import { currentProfile, store } from '../state';
 import { Button } from '../ui/Button';
@@ -49,6 +50,7 @@ export abstract class GameBase extends Phaser.Scene {
   protected level!: LevelDef;
   protected rng!: Rng;
   protected items: string[] = [];
+  protected theme!: Theme;
   protected kb!: OnScreenKeyboard;
   protected playing = false;
   protected correct = 0;
@@ -83,6 +85,7 @@ export abstract class GameBase extends Phaser.Scene {
 
   init(data: { levelId: string }): void {
     this.level = levelById(data.levelId);
+    this.theme = themeFor(this.level.world);
     this.profile = currentProfile()!;
     this.rng = new Rng();
     this.playing = false;
@@ -102,6 +105,7 @@ export abstract class GameBase extends Phaser.Scene {
     this.bigLetters = false;
     this.fullHints = false;
     this.activePowerUps = new Set();
+    this.shiftTipGiven = false;
   }
 
   create(): void {
@@ -139,6 +143,12 @@ export abstract class GameBase extends Phaser.Scene {
 
   // ---- scoring helpers for subclasses ------------------------------------------------------
 
+  /** The character typed, forgiving Caps Lock in the lowercase worlds (it's not a mistake there). */
+  protected typedChar(e: KeyInputEvent): string {
+    const lowerWorld = worldById(this.level.world).kind === 'lower';
+    return e.capsLock && lowerWorld ? e.char!.toLowerCase() : e.char!;
+  }
+
   /** The right key for `expected`. */
   protected hit(expected: string, e: KeyInputEvent): void {
     this.keystrokes++;
@@ -153,6 +163,20 @@ export abstract class GameBase extends Phaser.Scene {
     sfx.good(this.streak);
     this.kb.sparkle(e.code);
     if (this.streak % STREAK_FOR_POWERUP === 0) this.earnPowerUp();
+    this.checkShiftSide(expected);
+  }
+
+  private shiftTipGiven = false;
+
+  /** Touch typists use the Shift on the other hand. Notice (kindly, once) if the same side was used. */
+  private checkShiftSide(expected: string): void {
+    const s = strokeForChar(expected);
+    if (this.shiftTipGiven || !s?.shiftCode) return;
+    const other = s.shiftCode === 'ShiftLeft' ? 'ShiftRight' : 'ShiftLeft';
+    if (keyboard.isDown(other) && !keyboard.isDown(s.shiftCode)) {
+      this.shiftTipGiven = true;
+      this.say(`Nice! Next time, try the ${s.shiftCode === 'ShiftLeft' ? 'left' : 'right'} shift key, on the other side.`);
+    }
   }
 
   /** A wrong key while `expected` was wanted (null when anything on screen would have done). */
@@ -202,7 +226,7 @@ export abstract class GameBase extends Phaser.Scene {
   protected guide(next: string | null): void {
     const stroke = next === null ? null : strokeForChar(next);
     const glow = next !== null && (this.fullHints || this.missesInARow > 0 || hintsFor(this.profile, next).glow);
-    this.kb.setTargets(stroke && glow ? [stroke.code, ...(stroke.shiftCode ? [stroke.shiftCode] : [])] : []);
+    this.kb.setTargets(glow ? strokeCodes(stroke) : []);
   }
 
   /** What the player should type next (for hints and tests). Subclasses override. */
@@ -215,11 +239,10 @@ export abstract class GameBase extends Phaser.Scene {
   }
 
   protected fingerHint(expected: string): void {
-    const stroke = strokeForChar(expected);
-    const key = stroke && KEY_BY_CODE.get(stroke.code);
-    if (!key) return;
-    const what = expected === ' ' ? 'the space bar' : expected.toUpperCase();
-    this.say(`Try ${what}! Use ${FINGER_FRIENDS[key.finger]}, your ${FINGER_WORDS[key.finger]} finger.`);
+    const tip = howToType(expected);
+    if (!tip) return;
+    const what = expected === ' ' ? 'the space bar' : narrator.nameOf(expected);
+    this.say(`Try ${what}! ${tip}`);
   }
 
   protected setProgress(done: number, total: number): void {
@@ -434,17 +457,22 @@ export abstract class GameBase extends Phaser.Scene {
     );
     let spoken = `${GAME_NAMES[this.level.game]}! ${this.instructions()}`;
     if (this.level.newKeys.length) {
-      const keys = this.level.newKeys;
+      const keys = this.level.newKeys.slice(0, 5);
       keys.forEach((k, i) => {
         const l = new Letterling(this, (i - (keys.length - 1) / 2) * 150 - 180, h / 2 - 105, k, 100);
         c.add(l);
         this.tweens.add({ targets: l, y: l.y - 18, duration: 420, yoyo: true, repeat: -1, delay: i * 200, ease: 'Sine.easeInOut' });
       });
-      const finger = KEY_BY_CODE.get(strokeForChar(keys[0])!.code)!.finger;
-      const line = `New keys! Use ${FINGER_FRIENDS[finger]},\nyour ${FINGER_WORDS[finger]} fingers.`;
+      const s0 = strokeForChar(keys[0])!;
+      const finger = KEY_BY_CODE.get(s0.code)!.finger;
+      const line = s0.altCode
+        ? 'New keys! Hold the option\nkey to find them.'
+        : s0.shift
+          ? 'New keys! Hold the shift\nkey on the other side.'
+          : `New keys! Use ${FINGER_FRIENDS[finger]},\nyour ${FINGER_WORDS[finger]} fingers.`;
       c.add(this.add.text(140, h / 2 - 150, line, { fontFamily: FONT_BODY, fontSize: '36px', color: INK_CSS, fontStyle: 'bold' }).setOrigin(0.5));
-      const names = keys.map((k) => narrator.nameOf(k)).join(' and ');
-      spoken += ` New keys: ${names}. Use ${FINGER_FRIENDS[finger]}, your ${FINGER_WORDS[finger]} fingers.`;
+      const names = keys.map((k) => narrator.nameOf(k)).join(', ');
+      spoken += ` New keys: ${names}. ${line.replace('\n', ' ').replace('New keys! ', '')}`;
     }
     const go = this.add.text(0, h / 2 - 48, 'Press space to start!', { fontFamily: FONT_TITLE, fontSize: '50px', color: '#ff5fa2', stroke: '#ffffff', strokeThickness: 8 }).setOrigin(0.5);
     c.add(go);

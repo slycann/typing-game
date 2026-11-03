@@ -29,12 +29,12 @@ export const STREAK_FOR_POWERUP = 10;
 
 /** Typed power-ups only appear in the action games; the calm games get automatic ones. */
 export function powerUpsFor(game: GameKind): PowerUpId[] {
-  if (game === 'bubblePop' || game === 'boss') return ['slowmo', 'freeze', 'shield', 'rainbow', 'big'];
+  if (typedActivation(game)) return ['slowmo', 'freeze', 'shield', 'rainbow', 'big'];
   return ['shield', 'rainbow', 'glow'];
 }
 
 export function typedActivation(game: GameKind): boolean {
-  return game === 'bubblePop' || game === 'boss';
+  return game === 'bubblePop' || game === 'boss' || game === 'fruitCatch';
 }
 
 /** The word a child types to switch a power-up on, using only keys they know. */

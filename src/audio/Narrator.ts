@@ -7,7 +7,11 @@ const LETTER_NAMES: Record<string, string> = {
   t: 'tee', u: 'you', v: 'vee', w: 'double you', x: 'ex', y: 'why', z: 'zee',
   ' ': 'space', ';': 'semicolon', ',': 'comma', '.': 'period', '/': 'slash', "'": 'apostrophe',
   '\n': 'return', '\t': 'tab', '-': 'dash', '=': 'equals', '[': 'open bracket', ']': 'close bracket',
-  '\\': 'backslash', '`': 'backtick',
+  '\\': 'backslash', '`': 'backtick', '?': 'question mark', '!': 'exclamation mark', '@': 'at sign',
+  '#': 'hash', '$': 'dollar sign', '%': 'percent', '&': 'and sign', '*': 'star', '(': 'open bracket',
+  ')': 'close bracket', '_': 'underscore', '+': 'plus', '"': 'quote mark', ':': 'colon', 'é': 'e with an accent',
+  'ñ': 'n with a squiggle', 'ü': 'u with two dots', '©': 'copyright', '™': 'trademark', '°': 'degrees',
+  '÷': 'divide', 'ß': 'sharp s', '¡': 'upside-down exclamation mark', '¿': 'upside-down question mark',
 };
 
 const PREFERRED_VOICES = ['Samantha', 'Karen', 'Moira', 'Tessa', 'Google US English', 'Microsoft Aria'];

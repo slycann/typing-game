@@ -21,12 +21,26 @@ export interface ApplyOutcome {
   firstClear: boolean;
 }
 
-/** A level is open if it's the first one, or the one before it has at least one star. */
+/** A level is open if the one before it (across worlds) has at least one star. */
 export function isLevelUnlocked(profile: Profile, level: LevelDef): boolean {
-  if (level.index === 0) return true;
+  if (level.index === 0) return level.world === 1 || isWorldUnlocked(profile, level.world);
   const world = WORLDS.find((w) => w.id === level.world)!;
   const prev = world.levels[level.index - 1];
   return (profile.stars[prev.id] ?? 0) >= 1;
+}
+
+/** A world opens once Grumble has been cheered up in the world before it. */
+export function isWorldUnlocked(profile: Profile, worldId: number): boolean {
+  if (worldId <= 1) return true;
+  const prev = WORLDS.find((w) => w.id === worldId - 1);
+  return !!prev && (profile.stars[prev.levels[prev.levels.length - 1].id] ?? 0) >= 1;
+}
+
+/** The furthest world this player can visit. */
+export function furthestWorld(profile: Profile): number {
+  let id = 1;
+  while (id < WORLDS.length && isWorldUnlocked(profile, id + 1)) id++;
+  return id;
 }
 
 /** Where the player's avatar should stand: the first open level without stars, else the last open one. */

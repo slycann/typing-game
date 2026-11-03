@@ -9,6 +9,7 @@ export const debug = {
   fps: () => 0,
   players: () => [] as unknown[],
   profile: () => null as unknown,
+  grant: async (_levelId: string): Promise<void> => undefined,
   marks: [] as [string, number][],
   mark(label: string): void {
     this.marks.push([label, Math.round(performance.now())]);
@@ -32,5 +33,6 @@ if (typeof window !== 'undefined') {
     marks: () => debug.marks,
     players: () => debug.players(),
     profile: () => debug.profile(),
+    grant: (id: string) => debug.grant(id),
   };
 }

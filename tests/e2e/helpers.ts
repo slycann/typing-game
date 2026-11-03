@@ -43,6 +43,35 @@ export async function newPlayer(page: Page, name: string, age: 'young' | 'middle
   await waitScene(page, 'Story', 300);
 }
 
+const OPTION_CODES: Record<string, string> = { é: 'KeyE', ñ: 'KeyN', ü: 'KeyU', '©': 'KeyG', '™': 'Digit2', '°': 'Digit8', '÷': 'Slash', ß: 'KeyS', '¡': 'Digit1', '¿': 'Slash' };
+
+/** Type one character. Option-key characters are sent as the key events a Mac produces. */
+export async function typeChar(page: Page, ch: string) {
+  if (!(ch in OPTION_CODES)) return page.keyboard.type(ch);
+  await page.evaluate(
+    ([key, code]) => {
+      for (const type of ['keydown', 'keyup']) window.dispatchEvent(new KeyboardEvent(type, { key, code, altKey: true, bubbles: true }));
+    },
+    [ch, OPTION_CODES[ch]],
+  );
+}
+
+/** Pretend every level up to `levelId` is cleared (dev server only), then reload onto the map. */
+export async function grantAndReturn(page: Page, levelId: string) {
+  await page.evaluate((id) => (window as unknown as { __KQ: { grant: (id: string) => Promise<void> } }).__KQ.grant(id), levelId);
+  await page.reload();
+  await waitScene(page, 'Title', 200);
+  await page.keyboard.press('Enter');
+  await waitScene(page, 'ProfileSelect', 300);
+  await page.keyboard.press('Enter');
+  await expect.poll(() => kq(page, (k) => k.scene()), { timeout: 15_000 }).toMatch(/Story|WorldMap/);
+  if ((await kq(page, (k) => k.scene())) === 'Story') {
+    await page.waitForTimeout(500);
+    await page.keyboard.press('Escape');
+  }
+  await waitScene(page, 'WorldMap', 500);
+}
+
 /** Play the current game's intro + level like a perfect (if hasty) player until it ends. */
 export async function playLevel(page: Page, onPlaying?: () => Promise<void>) {
   await expect.poll(() => kq(page, (k) => k.info().mode)).toBe('intro');
@@ -53,7 +82,7 @@ export async function playLevel(page: Page, onPlaying?: () => Promise<void>) {
   while (Date.now() < deadline) {
     const info = await kq(page, (k) => k.info());
     if (info.finished) return info;
-    if (typeof info.expected === 'string') await page.keyboard.type(info.expected);
+    if (typeof info.expected === 'string') await typeChar(page, info.expected);
     await page.waitForTimeout(60);
   }
   throw new Error('level did not finish');

@@ -28,7 +28,12 @@ export function speedPassage(keys: string[], rng: Rng, words = 30): string {
   while (out.length < words) {
     const sentence = rng.pick(TEMPLATES).map(fill);
     if (sentence.every((w) => w !== null)) {
-      out.push(...sentence.join(' ').split(' '));
+      const words = sentence.join(' ').split(' ');
+      // Once capitals and full stops are known, sentences get them too.
+      const cap = words[0][0].toUpperCase() + words[0].slice(1);
+      if (ok.has(cap[0])) words[0] = cap;
+      if (ok.has('.')) words[words.length - 1] += '.';
+      out.push(...words);
     } else if (pool.length >= 3) {
       const w = rng.pick(pool);
       if (w !== out[out.length - 1]) out.push(w);

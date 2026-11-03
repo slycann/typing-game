@@ -17,7 +17,7 @@ import { coinsFor, mergeKeyStats } from '../engine/Progress';
 import { Rng } from '../engine/Rng';
 import { starsForAccuracy, TypingSession } from '../engine/TypingSession';
 import { keyboard, type KeyInputEvent } from '../input/KeyboardInput';
-import { strokeForChar } from '../input/keyLayout';
+import { strokeCodes, strokeForChar } from '../input/keyLayout';
 import type { Profile } from '../save/types';
 import { currentProfile, store } from '../state';
 import { Button } from '../ui/Button';
@@ -119,9 +119,12 @@ export class PracticeGardenScene extends Phaser.Scene {
       for (let i = 0; i < 40; i++) g.fillCircle(40 + ((i * 97) % 1480), 30 + ((i * 53) % 80), 5);
     });
     this.add.image(GAME_W / 2 + 120, SOIL_Y - 40, soil);
-    const n = this.keys.length;
+    // Up to ten plants: the keys that most need watering, in keyboard-learning order.
+    const shown = new Set(weakestKeys(this.profile, this.keys, 10));
+    const plantKeys = this.keys.filter((k) => shown.has(k));
+    const n = plantKeys.length;
     const span = Math.min(1300, n * 150);
-    this.keys.forEach((k, i) => {
+    plantKeys.forEach((k, i) => {
       const x = GAME_W / 2 + 120 - span / 2 + (span / n) * (i + 0.5);
       const stage = masteryOf(this.profile.keyStats[k]);
       const img = this.add.image(x, SOIL_Y, bloomTexture(this, stage)).setOrigin(0.5, 1).setScale(1.5);
@@ -190,7 +193,7 @@ export class PracticeGardenScene extends Phaser.Scene {
     const ch = this.session?.expected ?? null;
     const stroke = ch ? strokeForChar(ch) : null;
     const glow = ch ? hintsFor(this.profile, ch).glow : false;
-    this.kb.setTargets(stroke && glow ? [stroke.code] : []);
+    this.kb.setTargets(glow ? strokeCodes(stroke) : []);
     this.updateDebug();
   }
 

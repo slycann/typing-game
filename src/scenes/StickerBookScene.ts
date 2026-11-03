@@ -13,14 +13,20 @@ import { debug } from '../debug';
 import { BADGES, rankFor, RANKS } from '../engine/Achievements';
 import { BLOOM_NAMES, masteryOf } from '../engine/Mastery';
 import { currentProfile } from '../state';
+import type { Profile } from '../save/types';
 import { Button } from '../ui/Button';
 import { enterScene, goTo, onKeys } from './common';
 
 const ALL = KEY_STAGES.flatMap((s) => s.keys);
+const PER_PAGE = 30;
 
 /** The Sticker Book: every Letterling you've rescued (with how well you know it), plus badges. */
 export class StickerBookScene extends Phaser.Scene {
   private stickers = new Map<string, Letterling>();
+  private page = 0;
+  private pageLayer!: Phaser.GameObjects.Container;
+  private profile!: Profile;
+  private pageLabel!: Phaser.GameObjects.Text;
 
   constructor() {
     super('StickerBook');
@@ -31,6 +37,8 @@ export class StickerBookScene extends Phaser.Scene {
     const p = currentProfile();
     if (!p) return void this.scene.start('ProfileSelect');
     this.stickers = new Map();
+    this.profile = p;
+    this.page = 0;
     this.cameras.main.setBackgroundColor('#c98a5b');
     const book = bake(this, 'book', 1800, 900, (g) => {
       g.fillStyle(0x7a3e8a, 1);
@@ -50,23 +58,9 @@ export class StickerBookScene extends Phaser.Scene {
     const rescued = new Set(p.stickers);
     const count = ALL.filter((k) => rescued.has(k)).length;
     this.add.text(left, 170, `Letterlings rescued: ${count} of ${ALL.length}`, { fontFamily: FONT_TITLE, fontSize: '40px', color: INK_CSS }).setOrigin(0.5);
-    const blank = bake(this, 'sticker-blank', 104, 110, (g) => {
-      g.lineStyle(5, 0xd9c9a8, 1);
-      g.strokeRoundedRect(4, 4, 96, 102, 30);
-    });
-    ALL.forEach((k, i) => {
-      const x = left - 330 + (i % 6) * 132;
-      const y = 300 + Math.floor(i / 6) * 128;
-      if (rescued.has(k)) {
-        const l = new Letterling(this, x, y + 46, k, 84);
-        this.stickers.set(k, l);
-        const stage = masteryOf(p.keyStats[k]);
-        this.add.image(x + 44, y + 36, bloomTexture(this, stage)).setScale(0.5);
-      } else {
-        this.add.image(x, y, blank);
-        this.add.text(x, y, '?', { fontFamily: FONT_TITLE, fontSize: '54px', color: '#d9c9a8' }).setOrigin(0.5);
-      }
-    });
+    this.pageLayer = this.add.container(0, 0);
+    this.pageLabel = this.add.text(left, 960, '', { fontFamily: FONT_BODY, fontSize: '28px', color: '#7a6a9a', fontStyle: 'bold' }).setOrigin(0.5);
+    this.showPage(0);
     if (rescued.has('grumble')) {
       new Grumble(this, left + 300, 880, 0.4).setMood('happy');
       this.add.text(left + 300, 950, 'Friend: Grumble', { fontFamily: FONT_BODY, fontSize: '26px', color: INK_CSS, fontStyle: 'bold' }).setOrigin(0.5);
@@ -101,8 +95,13 @@ export class StickerBookScene extends Phaser.Scene {
     onKeys(this, (e) => {
       if (e.type !== 'down' || e.repeat) return;
       if (e.code === 'Escape' || e.code === 'Enter') return goTo(this, 'WorldMap');
+      const pages = Math.ceil(ALL.length / PER_PAGE);
+      if (e.code === 'ArrowRight') return this.showPage((this.page + 1) % pages);
+      if (e.code === 'ArrowLeft') return this.showPage((this.page + pages - 1) % pages);
       if (!e.char || !e.char.trim()) return;
-      const k = e.char.toLowerCase();
+      const k = ALL.includes(e.char) ? e.char : e.char.toLowerCase();
+      const at = ALL.indexOf(k);
+      if (at >= 0 && Math.floor(at / PER_PAGE) !== this.page) this.showPage(Math.floor(at / PER_PAGE));
       const l = this.stickers.get(k);
       if (l) {
         sfx.good(2);
@@ -113,5 +112,31 @@ export class StickerBookScene extends Phaser.Scene {
         narrator.say(`${narrator.nameOf(k)} is still lost. Keep playing to rescue it!`);
       }
     });
+  }
+
+  private showPage(page: number): void {
+    this.page = page;
+    this.pageLayer.removeAll(true);
+    this.stickers.clear();
+    const left = GAME_W / 2 - 445;
+    const rescued = new Set(this.profile.stickers);
+    const blank = bake(this, 'sticker-blank', 104, 110, (g) => {
+      g.lineStyle(5, 0xd9c9a8, 1);
+      g.strokeRoundedRect(4, 4, 96, 102, 30);
+    });
+    ALL.slice(page * PER_PAGE, (page + 1) * PER_PAGE).forEach((k, i) => {
+      const x = left - 330 + (i % 6) * 132;
+      const y = 290 + Math.floor(i / 6) * 128;
+      if (rescued.has(k)) {
+        const l = new Letterling(this, x, y + 46, k, 84);
+        this.stickers.set(k, l);
+        this.pageLayer.add([l, this.add.image(x + 44, y + 36, bloomTexture(this, masteryOf(this.profile.keyStats[k]))).setScale(0.5)]);
+      } else {
+        this.pageLayer.add([this.add.image(x, y, blank), this.add.text(x, y, '?', { fontFamily: FONT_TITLE, fontSize: '54px', color: '#d9c9a8' }).setOrigin(0.5)]);
+      }
+    });
+    const pages = Math.ceil(ALL.length / PER_PAGE);
+    this.pageLabel.setText(`◀  page ${page + 1} of ${pages}  ▶`);
+    sfx.key();
   }
 }

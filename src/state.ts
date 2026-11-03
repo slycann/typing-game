@@ -8,12 +8,15 @@ export const session = {
   /** When this sitting started, for the gentle stretch-break reminder. */
   startedAt: Date.now(),
   breakReminded: false,
+  /** The world map last shown, so returning from a level lands in the same world. */
+  mapWorld: 0,
 };
 
 export function startSitting(profileId: string): void {
   session.profileId = profileId;
   session.startedAt = Date.now();
   session.breakReminded = false;
+  session.mapWorld = 0;
 }
 
 export function currentProfile(): Profile | undefined {

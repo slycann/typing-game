@@ -6,12 +6,15 @@ import { Grumble } from '../art/Grumble';
 import { Letterling } from '../art/Letterling';
 import { INK, INK_CSS, PALETTE } from '../art/palette';
 import { cloud, hills, sky, sun, tree } from '../art/scenery';
+import { backdrop, decorate, themeFor } from '../art/themes';
+import { KEY_STAGES } from '../curriculum/keyStages';
+import { worldById } from '../curriculum/worlds';
 import { Avatar } from '../art/Avatar';
 import { characterImage } from '../art/textures';
 import { FONT_BODY, GAME_W } from '../config';
 import { debug } from '../debug';
 import { currentProfile, store } from '../state';
-import { enterScene, goTo, onKeys } from './common';
+import { confetti, enterScene, goTo, onKeys } from './common';
 
 interface Page {
   text: string;
@@ -26,15 +29,17 @@ export class StoryScene extends Phaser.Scene {
   private caption!: Phaser.GameObjects.Text;
   private dots!: Phaser.GameObjects.Graphics;
   private turning = false;
+  private story = 'intro';
 
   constructor() {
     super('Story');
   }
 
-  create(): void {
+  create(data: { story?: string }): void {
     enterScene(this);
     const profile = currentProfile();
     if (!profile) return void this.scene.start('ProfileSelect');
+    this.story = data?.story ?? 'intro';
     this.page = 0;
     this.turning = false;
     this.layer = this.add.container(0, 0);
@@ -51,7 +56,69 @@ export class StoryScene extends Phaser.Scene {
       keep(tree(this, 1780, 680, 0.9));
     };
 
-    this.pages = [
+    const worldPages = (id: number): Page[] => {
+      const w = worldById(id);
+      const theme = themeFor(id);
+      const keys = KEY_STAGES.filter((s) => s.world === id).flatMap((s) => s.keys).slice(0, 8);
+      return [
+        {
+          text: w.story[0],
+          build: () => {
+            backdrop(this, theme, 470);
+            decorate(this, theme, [[160, 760, 1], [1780, 740, 0.9]]);
+            keys.forEach((ch, i) => {
+              const l = keep(new Letterling(this, 380 + i * 165, 650 + (i % 2) * 50, ch, 110));
+              this.tweens.add({ targets: l, y: l.y - 50, duration: 380, yoyo: true, repeat: -1, delay: i * 110, ease: 'Quad.easeOut' });
+            });
+          },
+        },
+        {
+          text: w.story[1],
+          build: () => {
+            backdrop(this, theme, 470);
+            keep(characterImage(this, 'juni', 640, 800, 1.4));
+            const me = keep(new Avatar(this, 1240, 800, profile, 1.4));
+            this.tweens.add({ targets: me, y: 750, duration: 300, yoyo: true, repeat: -1, repeatDelay: 400, ease: 'Quad.easeOut' });
+            keep(new Grumble(this, 960, 260, 0.8));
+          },
+        },
+      ];
+    };
+    const finale: Page[] = [
+      {
+        text: 'You did it! Every Letterling\nin Keyboard Valley is home again!',
+        build: () => {
+          meadow();
+          KEY_STAGES.flatMap((s) => s.keys).filter((k) => /[a-z]/.test(k)).forEach((ch, i) => {
+            const l = keep(new Letterling(this, 120 + (i % 13) * 140, 600 + Math.floor(i / 13) * 130, ch, 90));
+            this.tweens.add({ targets: l, y: l.y - 40, duration: 300, yoyo: true, repeat: -1, delay: (i % 13) * 60 });
+          });
+        },
+      },
+      {
+        text: "And Grumble isn't lonely any more.\nHe has more friends than anyone!",
+        build: () => {
+          meadow();
+          const g = keep(new Grumble(this, GAME_W / 2, 330, 1.3));
+          g.restMood = 'happy';
+          g.setMood('happy');
+          'grumble'.split('').forEach((ch, i) => keep(new Letterling(this, 560 + i * 130, 760, ch, 100)).dance(6));
+        },
+      },
+      {
+        text: `You're a true Key Keeper, ${profile.name}!\nKeep practising to make every flower bloom.`,
+        build: () => {
+          meadow();
+          keep(characterImage(this, 'qwerty', 560, 800, 1.1));
+          keep(characterImage(this, 'juni', 1360, 800, 1.3));
+          const me = keep(new Avatar(this, 960, 820, profile, 1.6));
+          this.tweens.add({ targets: me, y: 760, duration: 280, yoyo: true, repeat: -1, ease: 'Quad.easeOut' });
+          this.time.delayedCall(300, () => confetti(this, GAME_W / 2, 200, 120));
+        },
+      },
+    ];
+
+    this.pages = this.story === 'finale' ? finale : this.story.startsWith('world-') ? worldPages(Number(this.story.slice(6))) : [
       {
         text: 'This is Keyboard Valley.\nEvery key is a cosy home for a little Letterling.',
         build: () => {
@@ -143,7 +210,10 @@ export class StoryScene extends Phaser.Scene {
   private showPage(i: number): void {
     this.page = i;
     this.layer.removeAll(true);
+    // Everything a page draws goes into the page layer, so turning the page clears it.
+    const before = new Set(this.children.list);
     this.pages[i].build();
+    for (const o of [...this.children.list]) if (!before.has(o) && o !== this.layer) this.layer.add(o);
     this.caption.setText(this.pages[i].text);
     this.dots.clear();
     this.pages.forEach((_, k) => {
@@ -169,8 +239,10 @@ export class StoryScene extends Phaser.Scene {
 
   private done(): void {
     const p = currentProfile();
-    if (p && !p.seen.includes('intro')) void store.updateProfile(p.id, (pr) => pr.seen.push('intro'));
-    goTo(this, 'WorldMap');
+    const id = this.story;
+    if (p && !p.seen.includes(id)) void store.updateProfile(p.id, (pr) => pr.seen.push(id));
+    if (id.startsWith('world-')) goTo(this, 'WorldMap', { world: Number(id.slice(6)), focus: 1 });
+    else goTo(this, 'WorldMap');
   }
 
   private sparkleRing(x: number, y: number): void {

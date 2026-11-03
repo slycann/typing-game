@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { keysThrough } from '../../src/curriculum/keyStages';
+import { KEY_STAGES, keysThrough } from '../../src/curriculum/keyStages';
 import { itemCount, levelById, levelContent, WORLDS } from '../../src/curriculum/worlds';
-import { applyResult, currentLevelIndex, isLevelUnlocked } from '../../src/engine/Progress';
+import { applyResult, currentLevelIndex, furthestWorld, isLevelUnlocked } from '../../src/engine/Progress';
 import { Rng } from '../../src/engine/Rng';
 import { migrate } from '../../src/save/migrations';
 
@@ -18,14 +18,15 @@ describe('World 1', () => {
     expect(levelById('w1-3').game).toBe('bubblePop');
   });
 
-  it('level content only uses unlocked keys, in the right amount', () => {
-    for (const level of w1.levels) {
+  it('level content only uses unlocked keys, in the right amount (every world)', () => {
+    for (const level of WORLDS.flatMap((w) => w.levels)) {
       const keys = keysThrough(level.stage);
       for (const age of ['5-6', '7-8', '9-10'] as const) {
         for (let seed = 1; seed < 15; seed++) {
           const items = levelContent(level, age, new Rng(seed));
           expect(items).toHaveLength(itemCount(level.game, age));
-          for (const item of items) for (const c of item) expect(keys, `${level.id} ${item}`).toContain(c);
+          for (const item of items) for (const c of item) expect(keys, `${level.id} "${item}"`).toContain(c);
+          if (level.content !== 'letters') expect(items.every((w) => w.length >= 2), `${level.id} ${items}`).toBe(true);
           for (let i = 2; i < items.length; i++) expect(items[i] === items[i - 1] && items[i] === items[i - 2]).toBe(false);
         }
       }
@@ -36,6 +37,38 @@ describe('World 1', () => {
     const items = levelContent(levelById('w1-12'), '7-8', new Rng(4));
     expect(items.every((w) => w.length >= 2)).toBe(true);
     expect(new Set(items).size).toBeGreaterThan(4);
+  });
+});
+
+describe('Worlds 2–7', () => {
+  it('has seven worlds of twelve levels, each ending with Grumble', () => {
+    expect(WORLDS.map((w) => w.name)).toEqual(['Home Row Meadow', 'Treetop Village', 'Sandy Bottom Beach', 'Shifty Mountains', 'Rocket Ridge', 'Symbol Sea', 'Option Observatory']);
+    for (const w of WORLDS) {
+      expect(w.levels).toHaveLength(12);
+      expect(w.levels.at(-1)!.game).toBe('boss');
+    }
+  });
+
+  it('introduces every key stage somewhere', () => {
+    const introduced = new Set(WORLDS.flatMap((w) => w.levels).filter((l) => l.newKeys.length).map((l) => l.stage));
+    for (const s of KEY_STAGES) expect(introduced, s.id).toContain(s.id);
+  });
+
+  it('builds capitals, numbers, symbols and accents into words and sentences', () => {
+    const r = new Rng(5);
+    expect(levelContent(levelById('w4-11'), '9-10', r).every((s) => /^[A-Z]/.test(s))).toBe(true);
+    expect(levelContent(levelById('w5-8'), '9-10', r).some((s) => /\d/.test(s))).toBe(true);
+    expect(levelContent(levelById('w6-2'), '9-10', r).some((s) => /['"]/.test(s))).toBe(true);
+    expect(levelContent(levelById('w7-2'), '9-10', r).some((s) => s.includes('é'))).toBe(true);
+  });
+
+  it('opens a world once the previous Grumble is cheered up', () => {
+    const p = freshProfile();
+    const w2first = levelById('w2-1');
+    expect(isLevelUnlocked(p, w2first)).toBe(false);
+    p.stars['w1-12'] = 1;
+    expect(isLevelUnlocked(p, w2first)).toBe(true);
+    expect(furthestWorld(p)).toBe(2);
   });
 });
 
