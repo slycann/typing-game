@@ -95,7 +95,7 @@ test('parent zone: progress report, settings, daily limit, and backups', async (
 });
 
 test('the mute button silences everything and is remembered', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('./');
   await waitScene(page, 'Title');
   expect((await settings(page)).muted).toBe(false);
   await page.mouse.click(70 * (1280 / 1920), 70 * (720 / 1080));

@@ -1,6 +1,8 @@
 # Key Quest (working title)
 
-A story-driven typing game that teaches kids aged 5–10 to use a real keyboard. It's a web app first
+A story-driven typing game that teaches kids aged 5–10 to use a real keyboard.
+
+**Play it:** https://slycann.github.io/typing-game/ (works offline after the first visit; progress stays on the device). It's a web app first
 (TypeScript + Phaser 4 + Vite), to be wrapped with Capacitor for the App Store (iPad with keyboard + Mac).
 
 ## Run it
@@ -16,7 +18,10 @@ npm run dev        # http://localhost:5173
 npm test           # unit tests (Vitest)
 npm run test:e2e   # plays through in a real browser (Playwright); uses a dev-only star grant to reach later worlds
 npm run build      # typecheck + production build into dist/
+BASE_URL=https://slycann.github.io/typing-game/ npx playwright test milestone1   # smoke-test the live site
 ```
+
+Pushing to `main` runs `.github/workflows/deploy.yml`, which tests, builds and publishes to GitHub Pages.
 
 ## Where things live
 

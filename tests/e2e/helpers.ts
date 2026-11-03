@@ -27,7 +27,7 @@ export async function shot(page: Page, name: string) {
 
 /** From a fresh page: make a player and land on the world map (skipping the story). */
 export async function newPlayer(page: Page, name: string, age: 'young' | 'middle' = 'young') {
-  await page.goto('/');
+  await page.goto('./');
   await waitScene(page, 'Title', 300);
   await page.keyboard.press('Enter');
   await waitScene(page, 'NewPlayer', 300);

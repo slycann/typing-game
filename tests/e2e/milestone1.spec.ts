@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { kq, shot, waitScene } from './helpers';
 
 test('press a key, see it pressed; make a player; finish a warm-up; progress survives reload', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('./');
   await waitScene(page, 'Title');
   await shot(page, '01-title');
 

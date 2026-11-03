@@ -11,7 +11,8 @@ export default defineConfig({
   timeout: 90_000,
   workers: 1,
   use: {
-    baseURL: 'http://127.0.0.1:5173',
+    // BASE_URL=https://slycann.github.io/typing-game/ runs the tests against the live site.
+    baseURL: process.env.BASE_URL ?? 'http://127.0.0.1:5173',
     viewport: { width: 1280, height: 720 },
     launchOptions: {
       executablePath: existsSync(CHROME) ? CHROME : undefined,
@@ -22,9 +23,11 @@ export default defineConfig({
           : ['--enable-unsafe-swiftshader', '--use-angle=swiftshader', '--autoplay-policy=no-user-gesture-required'],
     },
   },
-  webServer: {
-    command: 'npx vite --port 5173 --strictPort',
-    url: 'http://127.0.0.1:5173',
-    reuseExistingServer: true,
-  },
+  webServer: process.env.BASE_URL
+    ? undefined
+    : {
+        command: 'npx vite --port 5173 --strictPort',
+        url: 'http://127.0.0.1:5173',
+        reuseExistingServer: true,
+      },
 });
