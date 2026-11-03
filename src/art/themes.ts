@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { bake } from './bake';
 import { PALETTE, darken } from './palette';
 import { cloud, flower, hills, sky, sun, tree } from './scenery';
+import { motion } from '../settings';
 
 export type Decor = 'trees' | 'treetops' | 'palms' | 'pines' | 'rocks' | 'coral' | 'stars';
 
@@ -39,7 +40,7 @@ export function backdrop(scene: Phaser.Scene, t: Theme, hillY: number, opts: { s
       }
     });
     const s = scene.add.image(0, 0, stars).setOrigin(0, 0);
-    scene.tweens.add({ targets: s, alpha: 0.6, duration: 1500, yoyo: true, repeat: -1 });
+    if (!motion.reduced) scene.tweens.add({ targets: s, alpha: 0.6, duration: 1500, yoyo: true, repeat: -1 });
     const [mx, my] = opts.sun ?? [1700, 160];
     const moon = bake(scene, 'moon', 160, 160, (g) => {
       g.fillStyle(0xfff4c4, 1);
@@ -55,7 +56,7 @@ export function backdrop(scene: Phaser.Scene, t: Theme, hillY: number, opts: { s
       for (let i = 0; i < 6; i++) g.fillTriangle(200 + i * 320, 0, 320 + i * 320, 0, 120 + i * 300, 800);
     });
     scene.add.image(0, 0, rays).setOrigin(0, 0);
-    for (let i = 0; i < 14; i++) {
+    for (let i = 0; i < (motion.reduced ? 0 : 14); i++) {
       const b = scene.add.circle(Phaser.Math.Between(40, 1880), Phaser.Math.Between(300, 900), Phaser.Math.Between(5, 14)).setStrokeStyle(3, 0xffffff, 0.7);
       scene.tweens.add({ targets: b, y: -40, duration: Phaser.Math.Between(6000, 12000), repeat: -1, delay: Phaser.Math.Between(0, 6000) });
     }
@@ -98,6 +99,7 @@ export function decorate(scene: Phaser.Scene, t: Theme, spots: [number, number, 
 }
 
 function swayer(scene: Phaser.Scene, img: Phaser.GameObjects.Image): void {
+  if (motion.reduced) return;
   scene.tweens.add({ targets: img, angle: { from: -3, to: 3 }, duration: 1800 + Math.random() * 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
 }
 

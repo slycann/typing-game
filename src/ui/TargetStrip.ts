@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { bake, hex } from '../art/bake';
 import { INK, INK_CSS, PALETTE, darken } from '../art/palette';
 import { FONT_BODY } from '../config';
+import { text as textPrefs } from '../settings';
 
 interface Tile {
   c: Phaser.GameObjects.Container;
@@ -21,7 +22,7 @@ export class TargetStrip extends Phaser.GameObjects.Container {
   constructor(scene: Phaser.Scene, x: number, y: number, text: string, maxWidth = 1500) {
     super(scene, x, y);
     const size = Math.min(120, Math.floor(maxWidth / Math.max(1, text.length) / 1.08));
-    const gap = size * 0.1;
+    const gap = size * (textPrefs.easyRead ? 0.22 : 0.1);
     const widths = [...text].map((ch) => (ch === ' ' ? size * 0.7 : size));
     const total = widths.reduce((a, b) => a + b, 0) + gap * (text.length - 1);
     let cx = -total / 2;

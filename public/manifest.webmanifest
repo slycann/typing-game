@@ -1,0 +1,16 @@
+{
+  "name": "Key Quest – a typing adventure",
+  "short_name": "Key Quest",
+  "description": "A story-driven typing game that teaches kids aged 5 to 10 to use a real keyboard.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#4fc3ff",
+  "theme_color": "#4fc3ff",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

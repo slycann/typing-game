@@ -1,6 +1,5 @@
 import Phaser from 'phaser';
-import { narrator } from '../audio/Narrator';
-import { sfx } from '../audio/Sfx';
+import { applySettings } from '../settings';
 import { ensureCritter, loadCoreTextures } from '../art/textures';
 import { INK_CSS } from '../art/palette';
 import { FONT_BODY, FONT_TITLE, GAME_H, GAME_W } from '../config';
@@ -34,8 +33,7 @@ export class BootScene extends Phaser.Scene {
     } catch (err) {
       console.error('Could not load saved progress', err);
     }
-    sfx.setVolume(store.data.settings.volume);
-    narrator.setEnabled(store.data.settings.voice);
+    applySettings();
     await loadCoreTextures(this);
     await Promise.all(store.profiles.map((p) => ensureCritter(this, p.animal, p.outfit))).catch(() => undefined);
     this.scene.start('Title');

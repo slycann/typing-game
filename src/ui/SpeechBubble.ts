@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { narrator } from '../audio/Narrator';
 import { INK, INK_CSS } from '../art/palette';
 import { FONT_BODY } from '../config';
+import { text as textPrefs } from '../settings';
 
 /** A comic speech bubble. say() shows the words and reads them aloud for little ones. */
 export class SpeechBubble extends Phaser.GameObjects.Container {
@@ -16,7 +17,7 @@ export class SpeechBubble extends Phaser.GameObjects.Container {
     this.tail = tail;
     this.g = scene.add.graphics();
     this.text = scene.add
-      .text(0, 0, '', { fontFamily: FONT_BODY, fontSize: '40px', color: INK_CSS, fontStyle: 'bold', align: 'center', wordWrap: { width: maxWidth - 60 } })
+      .text(0, 0, '', { fontFamily: FONT_BODY, fontSize: textPrefs.easyRead ? '46px' : '40px', color: INK_CSS, fontStyle: 'bold', align: 'center', wordWrap: { width: maxWidth - 60 }, lineSpacing: textPrefs.easyRead ? 10 : 0 })
       .setOrigin(0.5);
     this.add([this.g, this.text]);
     this.setVisible(false);

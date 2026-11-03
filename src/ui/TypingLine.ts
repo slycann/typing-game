@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { bake } from '../art/bake';
 import { INK, INK_CSS, PALETTE } from '../art/palette';
 import { FONT_BODY } from '../config';
+import { text as textPrefs } from '../settings';
 
 /**
  * One long line of text to type (a sentence, a race passage): finished letters slide off to
@@ -29,6 +30,7 @@ export class TypingLine extends Phaser.GameObjects.Container {
     this.done = scene.add.text(-35, 0, '', { ...style, color: '#1f9e4a' }).setOrigin(1, 0.5);
     this.cur = scene.add.text(0, 0, '', { ...style, color: INK_CSS }).setOrigin(0.5);
     this.rest = scene.add.text(35, 0, '', { ...style, color: INK_CSS }).setOrigin(0, 0.5);
+    if (textPrefs.easyRead) for (const t of [this.done, this.rest]) t.setLetterSpacing(8);
     this.add([scene.add.image(0, 0, plate), this.box, this.done, this.cur, this.rest]);
     scene.add.existing(this);
   }

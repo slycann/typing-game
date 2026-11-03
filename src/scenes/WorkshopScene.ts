@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { music } from '../audio/Music';
 import { sfx } from '../audio/Sfx';
 import { Letterling } from '../art/Letterling';
 import { FINGER_FRIENDS, INK, INK_CSS, PALETTE, darken } from '../art/palette';
@@ -53,6 +54,7 @@ export class WorkshopScene extends Phaser.Scene {
 
   create(): void {
     enterScene(this);
+    music.play('calm');
     const p = currentProfile();
     if (!p) {
       this.scene.start('ProfileSelect');

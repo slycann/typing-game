@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { bake } from './bake';
 import { INK } from './palette';
+import { motion } from '../settings';
 
 export type GrumbleMood = 'grumpy' | 'okay' | 'sneezy' | 'happy';
 
@@ -23,7 +24,7 @@ export class Grumble extends Phaser.GameObjects.Container {
     this.setScale(scale);
     this.baseScale = scale;
     scene.add.existing(this);
-    scene.tweens.add({ targets: this, y: y - 14, duration: 1800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    if (!motion.reduced) scene.tweens.add({ targets: this, y: y - 14, duration: 1800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
   }
 
   setMood(mood: GrumbleMood): void {

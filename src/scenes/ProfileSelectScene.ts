@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { music } from '../audio/Music';
 import { sfx } from '../audio/Sfx';
 import { INK, INK_CSS, OUTFIT_COLORS, PALETTE, darken, lighten } from '../art/palette';
 import { bunting, workshop } from '../art/scenery';
@@ -31,6 +32,7 @@ export class ProfileSelectScene extends Phaser.Scene {
 
   create(): void {
     enterScene(this);
+    music.play('title');
     if (store.profiles.length === 0) {
       this.scene.start('NewPlayer');
       return;

@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { music } from '../audio/Music';
 import { narrator } from '../audio/Narrator';
 import { sfx } from '../audio/Sfx';
 import { bake } from '../art/bake';
@@ -34,6 +35,7 @@ export class StickerBookScene extends Phaser.Scene {
 
   create(): void {
     enterScene(this);
+    music.play('calm');
     const p = currentProfile();
     if (!p) return void this.scene.start('ProfileSelect');
     this.stickers = new Map();

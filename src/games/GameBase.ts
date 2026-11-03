@@ -1,4 +1,6 @@
 import Phaser from 'phaser';
+import { music } from '../audio/Music';
+import { timeIsUp } from '../settings';
 import { narrator } from '../audio/Narrator';
 import { sfx } from '../audio/Sfx';
 import { bake } from '../art/bake';
@@ -114,8 +116,13 @@ export abstract class GameBase extends Phaser.Scene {
       this.scene.start('ProfileSelect');
       return;
     }
+    if (timeIsUp()) {
+      this.scene.start('TimeUp');
+      return;
+    }
     this.tweens.timeScale = 1;
     this.time.timeScale = 1;
+    music.play(this.level.game === 'boss' ? 'boss' : `game-${this.level.world}`);
     this.items = levelContent(this.level, this.profile.ageBand, this.rng);
     this.buildWorld();
     this.kb = new OnScreenKeyboard(this, (GAME_W - KB_W) / 2, KB_TOP, { width: KB_W }).attach(keyboard).setDepth(500);

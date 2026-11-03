@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { music } from '../audio/Music';
 import { narrator } from '../audio/Narrator';
 import { sfx } from '../audio/Sfx';
 import { bake } from '../art/bake';
@@ -18,6 +19,8 @@ import type { Profile } from '../save/types';
 import { currentProfile, session } from '../state';
 import { Button } from '../ui/Button';
 import { ProfileBadge } from '../ui/Hud';
+import { timeIsUp } from '../settings';
+import { SoundToggle } from '../ui/SoundToggle';
 import { drawStar } from '../ui/OnScreenKeyboard';
 import { enterScene, goTo, onKeys } from './common';
 
@@ -82,11 +85,13 @@ export class WorldMapScene extends Phaser.Scene {
       this.scene.start('ProfileSelect');
       return;
     }
+    if (timeIsUp()) return void this.scene.start('TimeUp');
     this.profile = p;
     this.stops = [];
     this.hopping = false;
     const id = Phaser.Math.Clamp(data?.world || session.mapWorld || furthestWorld(p), 1, furthestWorld(p));
     session.mapWorld = id;
+    music.play(`map-${id}`);
     const world = (this.world = worldById(id));
     if (id > 1 && !p.seen.includes(`world-${id}`)) {
       this.scene.start('Story', { story: `world-${id}` });
@@ -102,6 +107,7 @@ export class WorldMapScene extends Phaser.Scene {
       .text(GAME_W / 2, 70, world.name, { fontFamily: FONT_TITLE, fontSize: '76px', color: '#ffffff', stroke: INK_CSS, strokeThickness: 12 })
       .setOrigin(0.5);
     new ProfileBadge(this, this.profile);
+    new SoundToggle(this, 1440, 70).setDepth(45);
     new Button(this, GAME_W - 130, 70, 'Home', () => goTo(this, 'ProfileSelect'), { width: 210, height: 92, fontSize: 40, color: PALETTE.teal });
     this.add
       .text(GAME_W - 260, 70, `★ ${totalStars(this.profile)}`, { fontFamily: FONT_TITLE, fontSize: '48px', color: '#ffd23f', stroke: INK_CSS, strokeThickness: 9 })

@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { music } from '../audio/Music';
 import { narrator } from '../audio/Narrator';
 import { sfx } from '../audio/Sfx';
 import { ANIMAL_NAMES, ANIMALS } from '../art/critters';
@@ -41,6 +42,7 @@ export class NewPlayerScene extends Phaser.Scene {
 
   create(): void {
     enterScene(this);
+    music.play('title');
     this.animal = 'bunny';
     this.outfit = Phaser.Math.Between(0, OUTFIT_COLORS.length - 1);
     this.name = '';

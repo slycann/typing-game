@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { music } from '../audio/Music';
 import { narrator } from '../audio/Narrator';
 import { sfx } from '../audio/Sfx';
 import { Avatar } from '../art/Avatar';
@@ -49,6 +50,7 @@ export class ShopScene extends Phaser.Scene {
 
   create(): void {
     enterScene(this);
+    music.play('calm');
     const p = currentProfile();
     if (!p) return void this.scene.start('ProfileSelect');
     this.profile = p;

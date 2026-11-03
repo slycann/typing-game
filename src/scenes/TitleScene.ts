@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { music } from '../audio/Music';
 import { narrator } from '../audio/Narrator';
 import { sfx } from '../audio/Sfx';
 import { Grumble } from '../art/Grumble';
@@ -11,6 +12,7 @@ import { debug } from '../debug';
 import { keyboard } from '../input/KeyboardInput';
 import { Button } from '../ui/Button';
 import { OnScreenKeyboard } from '../ui/OnScreenKeyboard';
+import { SoundToggle } from '../ui/SoundToggle';
 import { SpeechBubble } from '../ui/SpeechBubble';
 import { enterScene, goTo, onKeys } from './common';
 
@@ -31,6 +33,7 @@ export class TitleScene extends Phaser.Scene {
 
   create(): void {
     enterScene(this);
+    music.play('title');
     this.greeted = false;
     sky(this);
     sun(this, 1760, 130, 70);
@@ -44,6 +47,7 @@ export class TitleScene extends Phaser.Scene {
     [[300, 700, PALETTE.pink], [470, 640, PALETTE.yellow], [1560, 660, PALETTE.purple], [1620, 720, PALETTE.red], [1300, 610, PALETTE.blue]].forEach(([x, y, c]) => flower(this, x, y, c, 0.9));
 
     this.makeTitle();
+    new SoundToggle(this, 70, 70);
     const grumble = new Grumble(this, 1560, 380, 0.65);
     this.time.addEvent({ delay: 6500, loop: true, startAt: 3500, callback: () => grumble.sneeze(() => this.sneezeLetter(grumble)) });
 

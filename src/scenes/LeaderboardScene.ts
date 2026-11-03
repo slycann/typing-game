@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { music } from '../audio/Music';
 import { narrator } from '../audio/Narrator';
 import { sfx } from '../audio/Sfx';
 import { bake, gradient } from '../art/bake';
@@ -26,6 +27,7 @@ export class LeaderboardScene extends Phaser.Scene {
 
   create(data: { board?: string; highlight?: number }): void {
     enterScene(this);
+    music.play('race');
     this.highlight = data?.highlight ?? 0;
     const tiers: SpeedTier[] = ['home-row', 'letters', 'pro'];
     const all = tiers.flatMap((t) => [boardKey(t, 30), boardKey(t, 60)]);

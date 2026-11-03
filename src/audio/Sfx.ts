@@ -2,18 +2,29 @@
 // mistakes get a gentle "boop", never a harsh buzzer.
 
 let ctx: AudioContext | null = null;
-let master: GainNode | null = null;
+let main: GainNode | null = null; // everything (mute switch)
+let master: GainNode | null = null; // sound effects
 let volume = 0.8;
+let muted = false;
 
 function audio(): AudioContext | null {
   if (typeof AudioContext === 'undefined') return null;
   if (!ctx) {
     ctx = new AudioContext();
+    main = ctx.createGain();
+    main.gain.value = muted ? 0 : 1;
+    main.connect(ctx.destination);
     master = ctx.createGain();
     master.gain.value = volume;
-    master.connect(ctx.destination);
+    master.connect(main);
   }
   return ctx;
+}
+
+/** The shared audio context and the bus music should plug into (created on first use). */
+export function audioBus(): { ctx: AudioContext; out: GainNode } | null {
+  const ac = audio();
+  return ac && main ? { ctx: ac, out: main } : null;
 }
 
 function tone(freq: number, start: number, dur: number, type: OscillatorType = 'sine', gain = 0.25, slideTo?: number) {
@@ -42,6 +53,11 @@ export const sfx = {
   setVolume(v: number): void {
     volume = v;
     if (master) master.gain.value = v;
+  },
+  /** Silence everything (effects and music). */
+  setMuted(on: boolean): void {
+    muted = on;
+    if (main) main.gain.value = on ? 0 : 1;
   },
   /** Any key press: a little wooden "tok" at a random happy pitch. */
   key(): void {

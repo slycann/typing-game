@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { debug } from '../debug';
 import { keyboard, type KeyListener } from '../input/KeyboardInput';
 import { narrator } from '../audio/Narrator';
+import { motion } from '../settings';
 
 /** Subscribe to the keyboard for as long as this scene is running. */
 export function onKeys(scene: Phaser.Scene, listener: KeyListener): void {
@@ -35,6 +36,7 @@ export function goTo(scene: Phaser.Scene, key: string, data?: object): void {
 
 /** Little burst of falling confetti. */
 export function confetti(scene: Phaser.Scene, x: number, y: number, count = 60): void {
+  if (motion.reduced) count = Math.min(count, 12);
   const colors = [0xff5d5d, 0xffd23f, 0x3ccf6e, 0x3a86ff, 0x9b5de5, 0xff5fa2, 0xff9a3c];
   for (let i = 0; i < count; i++) {
     const r = scene.add.rectangle(x, y, 14, 22, colors[i % colors.length]).setDepth(1000);

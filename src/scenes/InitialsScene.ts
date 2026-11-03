@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { music } from '../audio/Music';
 import { narrator } from '../audio/Narrator';
 import { sfx } from '../audio/Sfx';
 import { bake } from '../art/bake';
@@ -28,6 +29,7 @@ export class InitialsScene extends Phaser.Scene {
 
   create(data: RaceOutcome): void {
     enterScene(this);
+    music.play('race');
     this.outcome = data;
     this.letters = '';
     this.saving = false;

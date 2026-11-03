@@ -54,9 +54,12 @@ export interface KeyHints {
   glow: boolean;
 }
 
+/** Set from the Parent Zone: keep every hint on regardless of mastery. */
+export const hintPrefs = { always: false };
+
 /** Hints fade as a key is mastered; the youngest players always get full help. */
 export function hintsFor(p: Profile, ch: string): KeyHints {
-  if (p.ageBand === '5-6') return { label: true, glow: true };
+  if (p.ageBand === '5-6' || hintPrefs.always) return { label: true, glow: true };
   const m = masteryOf(p.keyStats[ch]);
   return { label: m < 3, glow: m < 4 };
 }

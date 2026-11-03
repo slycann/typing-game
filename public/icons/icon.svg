@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#7b6cf6"/>
+  <circle cx="420" cy="96" r="54" fill="#ffd23f"/>
+  <ellipse cx="256" cy="520" rx="380" ry="150" fill="#7ed957"/>
+  <rect x="106" y="150" width="300" height="270" rx="64" fill="#a85a12"/>
+  <rect x="106" y="122" width="300" height="270" rx="64" fill="#ff9a3c"/>
+  <rect x="136" y="140" width="240" height="40" rx="20" fill="#ffffff" opacity=".35"/>
+  <text x="256" y="320" font-family="Arial Rounded MT Bold, Arial, sans-serif" font-size="190" font-weight="bold" text-anchor="middle" fill="#3d2c5e">K</text>
+  <rect x="216" y="340" width="80" height="16" rx="8" fill="#3d2c5e" opacity=".6"/>
+</svg>

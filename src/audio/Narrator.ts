@@ -1,6 +1,8 @@
 // Characters talk using the device's built-in voice for now; recorded clips can replace
 // individual lines later without changing callers.
 
+import { music } from './Music';
+
 const LETTER_NAMES: Record<string, string> = {
   a: 'ay', b: 'bee', c: 'see', d: 'dee', e: 'ee', f: 'eff', g: 'jee', h: 'aitch', i: 'eye',
   j: 'jay', k: 'kay', l: 'el', m: 'em', n: 'en', o: 'oh', p: 'pee', q: 'cue', r: 'ar', s: 'ess',
@@ -50,6 +52,8 @@ export const narrator = {
     if (voice) u.voice = voice;
     u.pitch = opts.pitch ?? 1.15;
     u.rate = opts.rate ?? 0.95;
+    u.onstart = () => music.duck(true);
+    u.onend = u.onerror = () => music.duck(false);
     s.speak(u);
   },
   stop(): void {

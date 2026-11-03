@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { GAME_H, GAME_W } from '../config';
 import { bake, gradient, hex } from './bake';
 import { INK, PALETTE, darken } from './palette';
+import { motion } from '../settings';
 
 // Flat, bright, rounded scenery: gradient sky, rolling hills, lollipop trees, smiling sun.
 // Each piece is drawn once into a texture (see bake.ts) and then animated as an Image.
@@ -36,7 +37,7 @@ export function cloud(scene: Phaser.Scene, x: number, y: number, scale = 1, drif
     for (const [cx, cy, r] of [[-60, 6, 40], [-10, -24, 50], [45, -8, 44], [80, 12, 32], [0, 10, 48]]) g.fillCircle(ox + cx, oy + cy, r);
   });
   const img = scene.add.image(x, y, key).setOrigin(0.5, 0.55).setScale(scale);
-  if (drift) {
+  if (drift && !motion.reduced) {
     scene.tweens.add({ targets: img, x: x + 60 + Math.random() * 40, duration: 6000 + Math.random() * 4000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
   }
   return img;
@@ -74,9 +75,11 @@ export function sun(scene: Phaser.Scene, x: number, y: number, r = 80): Phaser.G
   });
   const rays = scene.add.image(0, 0, raysKey);
   const face = scene.add.image(0, 0, faceKey);
-  scene.tweens.add({ targets: rays, angle: 360, duration: 30000, repeat: -1 });
   const c = scene.add.container(x, y, [rays, face]);
-  scene.tweens.add({ targets: c, scale: 1.05, duration: 1600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+  if (!motion.reduced) {
+    scene.tweens.add({ targets: rays, angle: 360, duration: 30000, repeat: -1 });
+    scene.tweens.add({ targets: c, scale: 1.05, duration: 1600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+  }
   return c;
 }
 
@@ -94,7 +97,7 @@ export function tree(scene: Phaser.Scene, x: number, y: number, scale = 1, leaf:
     for (const [ax, ay] of [[-24, -180], [20, -150], [10, -200], [-30, -140]]) g.fillCircle(ox + ax, oy + ay, 8);
   });
   const img = scene.add.image(x, y, key).setOrigin(0.5, 248 / 250).setScale(scale);
-  scene.tweens.add({ targets: img, angle: { from: -1.5, to: 1.5 }, duration: 2200 + Math.random() * 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+  if (!motion.reduced) scene.tweens.add({ targets: img, angle: { from: -1.5, to: 1.5 }, duration: 2200 + Math.random() * 800, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
   return img;
 }
 
@@ -113,7 +116,7 @@ export function flower(scene: Phaser.Scene, x: number, y: number, petal: number,
     g.fillCircle(ox, oy - 42, 7);
   });
   const img = scene.add.image(x, y, key).setOrigin(0.5, 74 / 76).setScale(scale);
-  scene.tweens.add({ targets: img, angle: { from: -6, to: 6 }, duration: 1400 + Math.random() * 600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+  if (!motion.reduced) scene.tweens.add({ targets: img, angle: { from: -6, to: 6 }, duration: 1400 + Math.random() * 600, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
   return img;
 }
 

@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { music } from '../audio/Music';
 import { narrator } from '../audio/Narrator';
 import { sfx } from '../audio/Sfx';
 import { bake } from '../art/bake';
@@ -15,6 +16,7 @@ import { FONT_BODY, GAME_W } from '../config';
 import { debug } from '../debug';
 import { currentProfile, store } from '../state';
 import { confetti, enterScene, goTo, onKeys } from './common';
+import { motion } from '../settings';
 
 interface Page {
   text: string;
@@ -37,6 +39,7 @@ export class StoryScene extends Phaser.Scene {
 
   create(data: { story?: string }): void {
     enterScene(this);
+    music.play('calm');
     const profile = currentProfile();
     if (!profile) return void this.scene.start('ProfileSelect');
     this.story = data?.story ?? 'intro';
@@ -152,7 +155,7 @@ export class StoryScene extends Phaser.Scene {
           this.time.delayedCall(500, () =>
             g.sneeze(() => {
               sfx.pop();
-              this.cameras.main.shake(300, 0.01);
+              if (!motion.reduced) this.cameras.main.shake(300, 0.01);
               'asdfjklgh'.split('').forEach((ch, i) => {
                 const l = keep(new Letterling(this, 600, 360, ch, 90));
                 this.tweens.add({ targets: l, x: 2100 + i * 60, y: Phaser.Math.Between(80, 700), angle: 720, duration: 1600 + i * 120, ease: 'Cubic.easeOut' });

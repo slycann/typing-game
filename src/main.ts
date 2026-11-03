@@ -4,6 +4,7 @@ import { GAME_H, GAME_W } from './config';
 import { debug } from './debug';
 import { keyboard } from './input/KeyboardInput';
 import { store } from './state';
+import { addPlayedMinute } from './settings';
 import { WORLDS } from './curriculum/worlds';
 import { BakeShopScene } from './games/BakeShopScene';
 import { BubblePopScene } from './games/BubblePopScene';
@@ -27,11 +28,17 @@ import { PauseScene } from './scenes/PauseScene';
 import { ProfileSelectScene } from './scenes/ProfileSelectScene';
 import { ResultsScene } from './scenes/ResultsScene';
 import { StoryScene } from './scenes/StoryScene';
+import { TimeUpScene } from './scenes/TimeUpScene';
 import { TitleScene } from './scenes/TitleScene';
 import { WorkshopScene } from './scenes/WorkshopScene';
 import { WorldMapScene } from './scenes/WorldMapScene';
 
 keyboard.start(window, () => sfx.unlock());
+
+// Offline play on the website (not in the dev server, and not inside the App Store app).
+if (import.meta.env.PROD && 'serviceWorker' in navigator && location.protocol === 'https:') {
+  void navigator.serviceWorker.register('./sw.js');
+}
 window.addEventListener('pointerdown', () => sfx.unlock(), { once: true });
 
 const game = new Phaser.Game({
@@ -69,8 +76,17 @@ const game = new Phaser.Game({
     ShopScene,
     TreehouseScene,
     StickerBookScene,
+    TimeUpScene,
   ],
 });
+// Count play time for the daily limit: one minute at a time, only while actually playing.
+const RESTING_SCENES = new Set(['', 'Boot', 'Title', 'ProfileSelect', 'NewPlayer', 'Grownups', 'TimeUp', 'Pause']);
+window.setInterval(() => {
+  if (document.hidden || RESTING_SCENES.has(debug.scene)) return;
+  void addPlayedMinute();
+}, 60_000);
+
+if (import.meta.env.DEV) (window as unknown as { __GAME: Phaser.Game }).__GAME = game;
 debug.fps = () => Math.round(game.loop.actualFps);
 if (import.meta.env.DEV) {
   // Test-only shortcut (dev server only, never in a real build): pretend every level up to `levelId` was cleared.
@@ -86,5 +102,6 @@ if (import.meta.env.DEV) {
     });
   };
 }
+debug.settings = () => store.data.settings;
 debug.profile = () => store.getProfile(store.data.lastProfileId) ?? null;
 debug.players = () => store.profiles.map((p) => ({ name: p.name, coins: p.coins, stars: Object.keys(p.stars).length, stickers: p.stickers }));

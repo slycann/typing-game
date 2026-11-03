@@ -53,9 +53,20 @@ export interface LeaderboardEntry {
 }
 
 export interface Settings {
-  volume: number; // 0..1
+  volume: number; // sound effects, 0..1
+  musicVolume: number; // 0..1
+  muted: boolean;
   voice: boolean;
   reduceMotion: boolean;
+  /** Keep letters and glows on every key, even mastered ones. */
+  alwaysHints: boolean;
+  /** Bigger, more spaced-out text for children who find reading hard. */
+  easyRead: boolean;
+  /** Minutes of play a day before a grown-up is needed (0 = no limit). */
+  dailyLimitMin: number;
+  /** Minutes played on `limitDay` (all players together). */
+  playedToday: number;
+  limitDay: string;
 }
 
 export interface SaveData {
@@ -67,7 +78,7 @@ export interface SaveData {
 }
 
 export function defaultSettings(): Settings {
-  return { volume: 0.8, voice: true, reduceMotion: false };
+  return { volume: 0.8, musicVolume: 0.5, muted: false, voice: true, reduceMotion: false, alwaysHints: false, easyRead: false, dailyLimitMin: 0, playedToday: 0, limitDay: '' };
 }
 
 export function emptySave(): SaveData {

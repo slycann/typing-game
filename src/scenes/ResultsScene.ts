@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { music } from '../audio/Music';
 import { narrator } from '../audio/Narrator';
 import { sfx } from '../audio/Sfx';
 import { bake } from '../art/bake';
@@ -28,6 +29,7 @@ export class ResultsScene extends Phaser.Scene {
 
   create(data: ResultsData): void {
     enterScene(this);
+    music.play('title');
     const profile = currentProfile()!;
     const level = levelById(data.levelId);
     const boss = level.game === 'boss';
