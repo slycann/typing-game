@@ -1,0 +1,18 @@
+/* Shared look for the website's info pages (privacy, support). */
+@font-face { font-family: 'Andika'; src: url('./assets/fonts/andika-400.woff2') format('woff2'); font-weight: 400; }
+@font-face { font-family: 'Andika'; src: url('./assets/fonts/andika-700.woff2') format('woff2'); font-weight: 700; }
+@font-face { font-family: 'Fredoka'; src: url('./assets/fonts/fredoka-600.woff2') format('woff2'); font-weight: 400 700; }
+:root { --ink: #3d2c5e; --sky: #4fc3ff; --sky2: #b8ecff; --grass: #7ed957; --pink: #ff5fa2; --card: #ffffff; --muted: #6a5a8a; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: 'Andika', system-ui, sans-serif; color: var(--ink); background: linear-gradient(var(--sky), var(--sky2) 55%, var(--grass) 55%); min-height: 100vh; line-height: 1.55; font-size: 18px; }
+main { max-width: 780px; margin: 0 auto; padding: 32px 16px 64px; }
+header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; }
+header img { width: 64px; height: 64px; border-radius: 16px; }
+header a { color: #fff; text-decoration: none; font-family: 'Fredoka', sans-serif; font-size: 34px; -webkit-text-stroke: 1px var(--ink); text-shadow: 0 3px 0 var(--ink); }
+.card { background: var(--card); border-radius: 28px; padding: 28px 28px 20px; box-shadow: 0 8px 0 var(--ink); }
+h1 { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 38px; margin: 0 0 6px; color: var(--pink); }
+h2 { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 24px; margin: 26px 0 6px; }
+p, li { margin: 0 0 10px; }
+.muted { color: var(--muted); }
+a { color: #2d6ec9; }
+.play { display: inline-block; margin-top: 18px; background: var(--pink); color: #fff; font-family: 'Fredoka', sans-serif; font-size: 22px; padding: 10px 24px; border-radius: 999px; text-decoration: none; box-shadow: 0 5px 0 #b8336f; }

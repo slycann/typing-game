@@ -1,4 +1,4 @@
-# Key Quest (working title)
+# Letterlings
 
 A story-driven typing game that teaches kids aged 5–10 to use a real keyboard.
 

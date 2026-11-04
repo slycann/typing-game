@@ -58,7 +58,7 @@ test('parent zone: progress report, settings, daily limit, and backups', async (
   await page.keyboard.press('s');
   const file = await (await download).path();
   const saved = JSON.parse(readFileSync(file, 'utf8'));
-  expect(saved.app).toBe('key-quest');
+  expect(saved.app).toBe('letterlings');
   expect(saved.profiles[0].name).toBe('Gus');
   const chooser = page.waitForEvent('filechooser');
   await page.keyboard.press('l');

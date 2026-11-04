@@ -369,7 +369,7 @@ export class GrownupsScene extends Phaser.Scene {
     const blob = new Blob([store.exportJson()], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `key-quest-backup-${todayKey()}.json`;
+    a.download = `letterlings-backup-${todayKey()}.json`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
     sfx.select();

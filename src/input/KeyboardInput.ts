@@ -66,6 +66,8 @@ export class KeyboardInput {
   private held = new Map<string, KeyInputEvent>();
   private target: Window | null = null;
   private onFirstInput: (() => void) | null = null;
+  /** Has a real key been pressed since the game started? (On iPad, proof a keyboard is connected.) */
+  sawKey = false;
 
   start(target: Window = window, onFirstInput?: () => void): void {
     this.target = target;
@@ -102,6 +104,7 @@ export class KeyboardInput {
 
   private handleDown = (ev: KeyboardEvent): void => {
     if (shouldBlockDefault(ev)) ev.preventDefault();
+    this.sawKey = true;
     if (this.onFirstInput) {
       this.onFirstInput();
       this.onFirstInput = null;

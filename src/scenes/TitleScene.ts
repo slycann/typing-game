@@ -13,10 +13,12 @@ import { keyboard } from '../input/KeyboardInput';
 import { Button } from '../ui/Button';
 import { OnScreenKeyboard } from '../ui/OnScreenKeyboard';
 import { SoundToggle } from '../ui/SoundToggle';
+import { showKeyboardNeeded } from '../ui/KeyboardNeeded';
+import { isNativeApp } from '../platform';
 import { SpeechBubble } from '../ui/SpeechBubble';
 import { enterScene, goTo, onKeys } from './common';
 
-const TITLE = 'Key Quest';
+const TITLE = 'Letterlings';
 const LETTER_COLORS = [PALETTE.red, PALETTE.orange, PALETTE.yellow, PALETTE.green, PALETTE.blue, PALETTE.purple, PALETTE.hotPink, PALETTE.teal];
 const SNEEZE_LETTERS = 'asdfjkl';
 
@@ -61,7 +63,8 @@ export class TitleScene extends Phaser.Scene {
     this.kb.setTargets(['Enter']);
     debug.keyboard = this.kb;
 
-    new Button(this, GAME_W / 2 + 40, 470, 'Play!', () => this.start(), { width: 380, height: 130, fontSize: 64, keyHint: 'return', color: PALETTE.hotPink });
+    // On iPad, tapping Play without ever pressing a key means there's probably no keyboard attached.
+    new Button(this, GAME_W / 2 + 40, 470, 'Play!', () => (isNativeApp && !keyboard.sawKey ? showKeyboardNeeded(this) : this.start()), { width: 380, height: 130, fontSize: 64, keyHint: 'return', color: PALETTE.hotPink });
 
     this.bubble = new SpeechBubble(this, 460, 500, 600, 'left');
     this.time.delayedCall(900, () => !this.greeted && this.bubble.say("Hi! I'm Juni!\nPress any key!", { speak: false }));

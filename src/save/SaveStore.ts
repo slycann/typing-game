@@ -1,4 +1,6 @@
+import { Preferences } from '@capacitor/preferences';
 import { createStore, get, set } from 'idb-keyval';
+import { isNativeApp } from '../platform';
 import { migrate } from './migrations';
 import { emptySave, MAX_PROFILES, type AgeBand, type AnimalKind, type Profile, type SaveData } from './types';
 
@@ -28,7 +30,7 @@ class LocalStorageAdapter implements StorageAdapter {
 
 /** IndexedDB (roomy, survives better on iPad), mirrored to localStorage as a fallback. */
 class IdbStorage implements StorageAdapter {
-  private store = createStore('key-quest', 'saves');
+  private store = createStore('key-quest', 'saves'); // original name, kept so existing progress loads
   private backup = new LocalStorageAdapter();
   async read(key: string) {
     try {
@@ -52,7 +54,18 @@ class IdbStorage implements StorageAdapter {
   }
 }
 
+/** In the App Store app: iOS's own app storage, which the system never clears to save space. */
+class NativeStorage implements StorageAdapter {
+  async read(key: string) {
+    return (await Preferences.get({ key })).value;
+  }
+  async write(key: string, value: string) {
+    await Preferences.set({ key, value });
+  }
+}
+
 export function createDefaultStorage(): StorageAdapter {
+  if (isNativeApp) return new NativeStorage();
   if (typeof indexedDB !== 'undefined') return new IdbStorage();
   if (typeof localStorage !== 'undefined') return new LocalStorageAdapter();
   return new MemoryStorage();
@@ -167,12 +180,13 @@ export class SaveStore {
 
   /** A file grown-ups can keep or move to another device. */
   exportJson(): string {
-    return JSON.stringify({ app: 'key-quest', ...this.data }, null, 2);
+    return JSON.stringify({ app: 'letterlings', ...this.data }, null, 2);
   }
 
   async importJson(text: string): Promise<void> {
     const parsed = JSON.parse(text) as Record<string, unknown>;
-    if (parsed.app !== 'key-quest') throw new Error('That file is not a Key Quest save');
+    // Saves made before the game was renamed say 'key-quest'.
+    if (parsed.app !== 'letterlings' && parsed.app !== 'key-quest') throw new Error('That file is not a Letterlings save');
     this.data = migrate(parsed);
     await this.commit();
   }

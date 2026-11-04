@@ -20,7 +20,7 @@ export const SYMBOL_PHRASES: readonly string[] = [
 
 export const OPTION_PHRASES: readonly string[] = [
   'café', 'olé', 'purée', 'José', 'été', 'piñata', 'niño', 'año', 'señor', 'über', 'müsli',
-  '©2026', '© Juni', 'Key Quest™', 'Rocket™',
+  '©2026', '© Juni', 'Letterlings™', 'Rocket™',
   '¡hola!', '¿qué?', '¡olé!', '¿sí?',
   '90°', 'hot 30°', '8÷2', '10÷5', 'straße', 'Maß',
 ];
