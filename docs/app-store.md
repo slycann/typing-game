@@ -24,46 +24,49 @@ Everything App Store Connect asks for, ready to paste. Character limits are note
 
 ## Promotional text (170)
 
-Seven worlds, a grumpy raincloud who needs cheering up, and dozens of Letterlings to rescue. Real typing on a real keyboard, one happy key at a time.
+Rescue 95 Letterlings across seven worlds and cheer up Grumble the Raincloud. Real typing on a real keyboard, one happy key at a time. No ads, no in-app purchases.
 
 ## Description (4000)
 
-Letterlings turns learning to type into a story-filled adventure for children aged 5 to 10.
+Letterlings teaches children aged 5 to 10 to type on a real keyboard, one happy key at a time. Seven worlds, eight mini-games and 95 little Letterlings to rescue turn typing practice into an adventure.
 
-Grumble the Raincloud sneezed so hard that the Letterlings, the little creatures who live inside every key, blew all over Keyboard Valley. Your child becomes the new Key Keeper, travelling through seven colourful worlds to bring them home, and cheering up Grumble along the way.
+Letterlings needs a hardware keyboard. Connect any keyboard to your iPad, or play on a Mac with Apple silicon.
 
-MADE FOR A REAL KEYBOARD
-Letterlings teaches proper keyboard skills, not tapping on glass. Every key you press is mirrored on the screen, the next key glows, and the Finger Friends show which finger to use. Connect any keyboard to your iPad, or play on a Mac.
+THE STORY
+Grumble the Raincloud sneezed so hard that the Letterlings, the little creatures who live inside every key, blew all over Keyboard Valley. Your child becomes the new Key Keeper, traveling through seven colorful worlds to bring them home and cheering Grumble up along the way.
 
-BUILT ON HOW CHILDREN LEARN TO TYPE
-• Starts on the home row with F and J, then adds keys in pairs
-• Accuracy first, speed later; younger children get gentler goals
-• Short, frequent sessions with a daily "Today's Adventure"
-• Hints fade as each key is mastered, so children learn by feel
-• Practice Garden builds drills from your child's weakest keys
+HOW IT TEACHES
+• Starts on the home row with F and J, then adds the other letters two at a time
+• The next key glows on screen, and the Finger Friends show which finger to use
+• Accuracy first, speed later, with gentler goals for younger children
+• Hints fade as each key is learned, so children learn to type by feel
+• The Practice Garden builds drills from your child's trickiest keys
+• Today's Adventure suggests three short activities for a good ten-minute session
 
-SEVEN WORLDS TO EXPLORE
-Home Row Meadow, Treetop Village, Sandy Bottom Beach, Shifty Mountains (capitals with Shift), Rocket Ridge (numbers), Symbol Sea (symbols) and Option Observatory (accents like é and ñ).
+SEVEN WORLDS
+Home Row Meadow, Treetop Village, Sandy Bottom Beach, Shifty Mountains (capital letters with Shift), Rocket Ridge (numbers), Symbol Sea (punctuation and symbols) and Option Observatory (letters like é and ñ, made with the Option key).
 
-LOTS TO PLAY, AGAIN AND AGAIN
-• Eight mini-games: Key Hop, Bubble Pop, Fruit Catch, Word Train, Bake Shop, Story Pages, Finger Fitness and Grumble's Rainy Day
-• Rocket Races with brand-new passages every time, and a high-score board for initials
-• Power-ups, coins, stars, badges and ranks
+LOTS TO PLAY
+• Eight mini-games: Finger Fitness, Key Hop, Bubble Pop, Fruit Catch, Word Train, Bake Shop, Story Pages and Grumble's Rainy Day
+• Rocket Races with fresh, silly sentences every time, and a high-score board for your initials
+• Coins, stars, power-ups, badges and ranks to earn
 • A shop full of hats, glasses and pets, and a treehouse to decorate
-• A sticker book of every Letterling rescued
+• A sticker book of every Letterling you've rescued
 
 EVERYTHING READ ALOUD
 Characters speak every instruction, so children who are still learning to read can play on their own.
 
 FOR GROWN-UPS
-A Parent Zone (behind a grown-ups-only question) shows each child's progress and the keys to practise next, sets a daily time limit, adjusts sound and accessibility options, and saves backups. Up to six players per device.
+The Parent Zone sits behind a grown-ups-only question. It shows each child's progress and the keys to practice next, and lets you set a daily play limit, adjust sound and music, turn on easy-read text or reduced motion, and save a backup of everyone's progress. Up to six players can share one device.
 
 NO ADS. NO IN-APP PURCHASES. NO DATA COLLECTED.
-Progress stays on your device. Nothing is tracked or shared.
+There are no accounts, and nothing is tracked or shared. Progress stays on your device.
 
 ## Keywords (100)
 
-typing,keyboard,learn to type,touch typing,kids,home row,spelling,letters,abc,school,practice,game
+touch,keyboard,keyboarding,home,row,letters,alphabet,abc,spelling,children,school,homeschool,fingers
+
+The name and subtitle are searched too, so no word from them is repeated here (Apple combines words across the three, e.g. "touch" + "Typing").
 
 ## What's New (first version)
 

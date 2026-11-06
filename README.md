@@ -2,8 +2,8 @@
 
 A story-driven typing game that teaches kids aged 5–10 to use a real keyboard.
 
-**Play it:** https://slycann.github.io/typing-game/ (works offline after the first visit; progress stays on the device). It's a web app first
-(TypeScript + Phaser 4 + Vite), to be wrapped with Capacitor for the App Store (iPad with keyboard + Mac).
+**Play it:** https://slycann.github.io/typing-game/ (works offline after the first visit; progress stays on the device). It's a web app
+(TypeScript + Phaser 4 + Vite), also wrapped with Capacitor as an App Store app for iPad (with a keyboard) and Apple-silicon Macs.
 
 ## Run it
 
@@ -22,6 +22,15 @@ BASE_URL=https://slycann.github.io/typing-game/ npx playwright test milestone1  
 ```
 
 Pushing to `main` runs `.github/workflows/deploy.yml`, which tests, builds and publishes to GitHub Pages.
+
+## iPad app
+
+```bash
+npm run ios                     # build, copy into ios/ and open Xcode
+scripts/ios-release.sh upload   # archive and upload to App Store Connect (run from the Mac's desktop session)
+```
+
+The App Store listing text and submission checklist are in `docs/app-store.md`.
 
 ## Where things live
 
