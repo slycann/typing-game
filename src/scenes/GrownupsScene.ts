@@ -18,6 +18,8 @@ import { applySettings, updateSettings } from '../settings';
 import { OnScreenKeyboard } from '../ui/OnScreenKeyboard';
 import type { Settings } from '../save/types';
 import type { Profile } from '../save/types';
+import { isNativeApp } from '../platform';
+import { openBackupFile, saveBackupFile } from '../save/backupFile';
 import { session, store } from '../state';
 import { Button } from '../ui/Button';
 import { enterScene, goTo, onKeys } from './common';
@@ -43,6 +45,7 @@ export class GrownupsScene extends Phaser.Scene {
   private tabButtons: Button[] = [];
   private reportFor = 0;
   private setSel = 0;
+  private saving = false;
 
   constructor() {
     super('Grownups');
@@ -354,47 +357,49 @@ export class GrownupsScene extends Phaser.Scene {
     this.panel(1300, 600, 280);
     this.text(GAME_W / 2, 380, 'Keep a copy of everyone\'s progress, or move it to another computer.', 34);
     this.text(GAME_W / 2, 440, 'Progress is saved only on this device. Nothing is sent anywhere.', 28, '#7a6a9a');
-    this.layer.add(new Button(this, GAME_W / 2 - 280, 580, 'Save a backup', () => this.download(), { width: 460, height: 110, fontSize: 40, color: PALETTE.green, keyHint: 'S' }));
-    this.layer.add(new Button(this, GAME_W / 2 + 280, 580, 'Load a backup', () => this.upload(), { width: 460, height: 110, fontSize: 40, color: PALETTE.orange, keyHint: 'L' }));
+    this.layer.add(new Button(this, GAME_W / 2 - 280, 580, 'Save a backup', () => void this.download(), { width: 460, height: 110, fontSize: 40, color: PALETTE.green, keyHint: 'S' }));
+    this.layer.add(new Button(this, GAME_W / 2 + 280, 580, 'Load a backup', () => void this.upload(), { width: 460, height: 110, fontSize: 40, color: PALETTE.orange, keyHint: 'L' }));
     this.text(GAME_W / 2, 720, 'Loading a backup replaces all players on this device.', 28, '#e07a1f');
     if (message) this.text(GAME_W / 2, 810, message, 34, '#1f9e4a');
     debug.info = { mode: 'backup', message };
     this.onModeKey = (code) => {
-      if (code === 'KeyS') this.download();
-      else if (code === 'KeyL') this.upload();
+      if (code === 'KeyS') void this.download();
+      else if (code === 'KeyL') void this.upload();
     };
   }
 
-  private download(): void {
-    const blob = new Blob([store.exportJson()], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `letterlings-backup-${todayKey()}.json`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  private async download(): Promise<void> {
+    if (this.saving) return; // the save dialog is already open
+    this.saving = true;
     sfx.select();
-    this.showBackup('Backup saved to your Downloads folder.');
+    let message: string;
+    try {
+      const saved = await saveBackupFile(`letterlings-backup-${todayKey()}.json`, store.exportJson());
+      message = !saved ? 'No backup saved.' : isNativeApp ? 'Backup saved.' : 'Backup saved to your Downloads folder.';
+    } catch (err) {
+      sfx.oops();
+      message = `Couldn't save a backup: ${(err as Error).message}`;
+    } finally {
+      this.saving = false;
+    }
+    if (this.mode === 'backup' && this.scene.isActive()) this.showBackup(message);
   }
 
-  private upload(): void {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'application/json,.json';
-    input.onchange = async () => {
-      const file = input.files?.[0];
-      if (!file) return;
-      try {
-        await store.importJson(await file.text());
-        session.profileId = null;
-        applySettings();
-        sfx.cheer();
-        this.showBackup(`Loaded! ${store.profiles.length} player${store.profiles.length === 1 ? '' : 's'} restored.`);
-      } catch (err) {
-        sfx.oops();
-        this.showBackup(`That file didn't work: ${(err as Error).message}`);
-      }
-    };
-    input.click();
+  private async upload(): Promise<void> {
+    let message: string;
+    try {
+      const text = await openBackupFile();
+      if (text === null) return;
+      await store.importJson(text);
+      session.profileId = null;
+      applySettings();
+      sfx.cheer();
+      message = `Loaded! ${store.profiles.length} player${store.profiles.length === 1 ? '' : 's'} restored.`;
+    } catch (err) {
+      sfx.oops();
+      message = `That file didn't work: ${(err as Error).message}`;
+    }
+    if (this.mode === 'backup' && this.scene.isActive()) this.showBackup(message);
   }
 
   // ---- confirm ---------------------------------------------------------------------------
