@@ -99,7 +99,18 @@ export class KeyboardInput {
   }
 
   private emit(e: KeyInputEvent): void {
-    for (const l of [...this.listeners]) l(e);
+    // Loop over a copy, since a key press can change scenes and add or remove listeners. Skip any
+    // removed during this press: a screen that just closed mustn't see it (its on-screen keyboard
+    // is already destroyed). And one failing listener mustn't stop the key reaching the others.
+    for (const l of [...this.listeners]) {
+      if (!this.listeners.has(l)) continue;
+      try {
+        l(e);
+      } catch (err) {
+        if (typeof reportError === 'function') reportError(err);
+        else console.error(err);
+      }
+    }
   }
 
   private handleDown = (ev: KeyboardEvent): void => {
